@@ -83,6 +83,7 @@ Treat the rest of this document as good defaults, not hard rules. The developer'
 
 - `src/app` - Next.js App Router pages, layouts, and route handlers.
 - `.repos/effect` - Effect 4 source, vendored as a squashed git subtree at the tag matching the installed `effect` version. Read `.repos/effect/LLMS.md` before writing Effect code. Prefer its patterns over invented ones. Never edit or import from it. When you bump `effect`, resync the subtree to the matching tag.
+- `.repos/three` - three.js source at the `rN` tag matching the installed `three` version (`0.187.0` is `r187`), as a squashed subtree pruned to `src/`, `docs/**/*.md`, `examples/jsm/**/*.js`, `llms.txt`, `LICENSE`, `README.md`, and `package.json`. The full tree is about 600 MB of example assets. Read the docs here before writing three.js code. Never edit or import from it. To resync, fetch the new tag, build a commit holding only those paths with `git update-index --index-info`, `git write-tree`, and `git commit-tree`, then `git subtree merge --squash --prefix .repos/three <commit>`.
 
 ## Taste
 
