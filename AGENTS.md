@@ -54,11 +54,12 @@ Treat the rest of this document as good defaults, not hard rules. The developer'
 - `bun install` installs.
 - `bun run dev` starts the Next.js dev server.
 - `bun run build` builds for production.
+- `bun run test` runs the vitest suite.
 - Stop what you started, by the PID you tracked.
 
 ## Verifying
 
-- Before you push, run `bun run lint`, `bun run typecheck`, and `bun run build`.
+- Before you push, run `bun run lint`, `bun run typecheck`, `bun run test`, and `bun run build`.
 - Backend behavior changes ship with focused tests for that behavior.
 - Test behavior that can break: rate limiting, token rotation, provider failover, stream translation, retrieval ranking, cache keys, and anything that touches privacy. Leave out tests for what types already guarantee and trivial wiring.
 - Test at the lowest layer that fails without your change. Do not repeat the case in a wrapper test.
@@ -81,7 +82,11 @@ Treat the rest of this document as good defaults, not hard rules. The developer'
 
 ## Where code lives
 
-- `src/app` - Next.js App Router pages, layouts, and route handlers.
+- `src/app` - Next.js App Router pages, layouts, and route handlers. `api/chat` streams chat events as SSE.
+- `src/components` - Client UI: the chat panel and the article picker.
+- `src/gateway` - The chat wire protocol (`ChatProtocol`), SSE encoding, the `Provider` interface with the mock provider, and the `Chat` service.
+- `src/rag` - Articles, passages, the seed catalog, and the `Retriever` service.
+- `src/server` - The `ManagedRuntime` that route handlers run services on.
 - `.repos/effect` - Effect 4 source, vendored as a squashed git subtree at the tag matching the installed `effect` version. Read `.repos/effect/LLMS.md` before writing Effect code. Prefer its patterns over invented ones. Never edit or import from it. When you bump `effect`, resync the subtree to the matching tag.
 
 ## Taste
