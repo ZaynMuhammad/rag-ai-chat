@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "duckduckgo-app",
+      "name": "rag-ai-chat",
       "dependencies": {
         "effect": "4.1.2",
         "next": "16.4.5",
