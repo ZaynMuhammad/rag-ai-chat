@@ -4,11 +4,40 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-const GLOBE_RADIUS = 1;
-const GRATICULE_RADIUS = GLOBE_RADIUS * 1.002;
-const GRATICULE_STEP_DEGREES = 15;
-const CIRCLE_SEGMENTS = 128;
+const EARTH_RADIUS = 1;
+const NIGHT_LIGHTS_RADIUS = EARTH_RADIUS * 1.001;
+const CLOUDS_RADIUS = EARTH_RADIUS * 1.01;
+const SPHERE_WIDTH_SEGMENTS = 128;
+const SPHERE_HEIGHT_SEGMENTS = 64;
+const SUN_DIRECTION = new THREE.Vector3(5, 3, 5).normalize();
+const CLOUD_DRIFT_RADIANS_PER_SECOND = 0.008;
 const MIN_FIELD_OF_VIEW_DEGREES = 45;
+
+const nightLightsVertexShader = /* glsl */ `
+  varying vec2 vUv;
+  varying vec3 vWorldNormal;
+
+  void main() {
+    vUv = uv;
+    vWorldNormal = normalize(mat3(modelMatrix) * normal);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const nightLightsFragmentShader = /* glsl */ `
+  uniform sampler2D lightsMap;
+  uniform vec3 sunDirection;
+  uniform vec3 lightsColor;
+  varying vec2 vUv;
+  varying vec3 vWorldNormal;
+
+  void main() {
+    float darkness = smoothstep(0.1, -0.25, dot(normalize(vWorldNormal), sunDirection));
+    gl_FragColor = vec4(lightsColor * texture2D(lightsMap, vUv).r * darkness, 1.0);
+  }
+`;
+
+type EarthTextures = ReturnType<typeof loadEarthTextures>;
 
 function fieldOfViewFitting(aspect: number) {
   if (aspect >= 1) return MIN_FIELD_OF_VIEW_DEGREES;
@@ -16,52 +45,70 @@ function fieldOfViewFitting(aspect: number) {
   return THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(halfMinFieldOfView) / aspect));
 }
 
-function circleSegments(pointAt: (angle: number) => THREE.Vector3) {
-  return Array.from({ length: CIRCLE_SEGMENTS }, (_, index) => [
-    pointAt((index / CIRCLE_SEGMENTS) * Math.PI * 2),
-    pointAt(((index + 1) / CIRCLE_SEGMENTS) * Math.PI * 2),
-  ]).flat();
+function loadEarthTextures(anisotropy: number) {
+  const loader = new THREE.TextureLoader();
+  const load = (name: string, colorSpace: THREE.ColorSpace = THREE.NoColorSpace) => {
+    const texture = loader.load(`/textures/earth/${name}.jpg`);
+    texture.colorSpace = colorSpace;
+    texture.anisotropy = anisotropy;
+    return texture;
+  };
+  return {
+    day: load("day", THREE.SRGBColorSpace),
+    bump: load("bump"),
+    roughness: load("roughness"),
+    nightLights: load("night"),
+    clouds: load("clouds"),
+  };
 }
 
-function createGraticuleGeometry() {
-  const latitudes = Array.from(
-    { length: 180 / GRATICULE_STEP_DEGREES - 1 },
-    (_, index) => THREE.MathUtils.degToRad(-90 + GRATICULE_STEP_DEGREES * (index + 1)),
-  );
-  const longitudes = Array.from(
-    { length: 180 / GRATICULE_STEP_DEGREES },
-    (_, index) => THREE.MathUtils.degToRad(GRATICULE_STEP_DEGREES * index),
-  );
-
-  const parallels = latitudes.flatMap((latitude) =>
-    circleSegments((angle) =>
-      new THREE.Vector3().setFromSphericalCoords(GRATICULE_RADIUS, Math.PI / 2 - latitude, angle),
-    ),
-  );
-  const meridians = longitudes.flatMap((longitude) =>
-    circleSegments((angle) =>
-      new THREE.Vector3().setFromSphericalCoords(GRATICULE_RADIUS, angle, longitude),
-    ),
-  );
-
-  return new THREE.BufferGeometry().setFromPoints([...parallels, ...meridians]);
+function sphere(radius: number) {
+  return new THREE.SphereGeometry(radius, SPHERE_WIDTH_SEGMENTS, SPHERE_HEIGHT_SEGMENTS);
 }
 
-function createGlobe() {
+function createEarth(textures: EarthTextures) {
   const surface = new THREE.Mesh(
-    new THREE.SphereGeometry(GLOBE_RADIUS, 64, 32),
-    new THREE.MeshStandardMaterial({ color: "#1d4ed8", roughness: 0.8 }),
+    sphere(EARTH_RADIUS),
+    new THREE.MeshStandardMaterial({
+      map: textures.day,
+      bumpMap: textures.bump,
+      bumpScale: 4,
+      roughnessMap: textures.roughness,
+      metalness: 0,
+    }),
   );
-  const graticule = new THREE.LineSegments(
-    createGraticuleGeometry(),
-    new THREE.LineBasicMaterial({ color: "#93c5fd", transparent: true, opacity: 0.5 }),
+  const nightLights = new THREE.Mesh(
+    sphere(NIGHT_LIGHTS_RADIUS),
+    new THREE.ShaderMaterial({
+      uniforms: {
+        lightsMap: { value: textures.nightLights },
+        sunDirection: { value: SUN_DIRECTION },
+        lightsColor: { value: new THREE.Color("#ffd8a0") },
+      },
+      vertexShader: nightLightsVertexShader,
+      fragmentShader: nightLightsFragmentShader,
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      depthWrite: false,
+    }),
   );
-  return new THREE.Group().add(surface, graticule);
+  const clouds = new THREE.Mesh(
+    sphere(CLOUDS_RADIUS),
+    new THREE.MeshStandardMaterial({
+      color: "#ffffff",
+      alphaMap: textures.clouds,
+      transparent: true,
+      depthWrite: false,
+    }),
+  );
+  nightLights.renderOrder = 1;
+  clouds.renderOrder = 2;
+  return { earth: new THREE.Group().add(surface, nightLights, clouds), clouds };
 }
 
-function disposeObject(root: THREE.Object3D) {
+function disposeMeshes(root: THREE.Object3D) {
   root.traverse((object) => {
-    if (object instanceof THREE.Mesh || object instanceof THREE.LineSegments) {
+    if (object instanceof THREE.Mesh) {
       object.geometry.dispose();
       object.material.dispose();
     }
@@ -79,12 +126,13 @@ export function Globe() {
     renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
 
+    const textures = loadEarthTextures(renderer.capabilities.getMaxAnisotropy());
+    const { earth, clouds } = createEarth(textures);
     const scene = new THREE.Scene();
-    const globe = createGlobe();
-    scene.add(globe);
-    scene.add(new THREE.AmbientLight("#ffffff", 0.6));
-    const sun = new THREE.DirectionalLight("#ffffff", 2.4);
-    sun.position.set(5, 3, 5);
+    scene.add(earth);
+    scene.add(new THREE.AmbientLight("#ffffff", 0.15));
+    const sun = new THREE.DirectionalLight("#ffffff", 3);
+    sun.position.copy(SUN_DIRECTION);
     scene.add(sun);
 
     const camera = new THREE.PerspectiveCamera(MIN_FIELD_OF_VIEW_DEGREES, 1, 0.1, 100);
@@ -113,7 +161,9 @@ export function Globe() {
     const timer = new THREE.Timer();
     renderer.setAnimationLoop((timestamp) => {
       timer.update(timestamp);
-      controls.update(timer.getDelta());
+      const delta = timer.getDelta();
+      clouds.rotation.y += CLOUD_DRIFT_RADIANS_PER_SECOND * delta;
+      controls.update(delta);
       renderer.render(scene, camera);
     });
 
@@ -121,7 +171,8 @@ export function Globe() {
       renderer.setAnimationLoop(null);
       resizeObserver.disconnect();
       controls.dispose();
-      disposeObject(scene);
+      disposeMeshes(scene);
+      Object.values(textures).forEach((texture) => texture.dispose());
       renderer.dispose();
       renderer.domElement.remove();
     };
