@@ -82,11 +82,32 @@ Treat the rest of this document as good defaults, not hard rules. The developer'
 ## Where code lives
 
 - `src/app` - Next.js App Router pages, layouts, and route handlers.
-- `.repos/effect` - Effect 4 source, vendored as a squashed git subtree at the tag matching the installed `effect` version. Read `.repos/effect/LLMS.md` before writing Effect code. Prefer its patterns over invented ones. Never edit or import from it. When you bump `effect`, resync the subtree to the matching tag.
+- `.repos/effect` - Effect 4 source, vendored as a squashed git subtree at the tag matching the installed `effect` version. Start from `.repos/effect/LLMS.md` when you need an Effect API you haven't checked yet. Prefer its patterns over invented ones. Never edit or import from it. When you bump `effect`, resync the subtree to the matching tag.
+- `.repos/three` - three.js source at the `rN` tag matching the installed `three` version (`0.187.0` is `r187`), as a squashed subtree pruned to `src/`, `docs/**/*.md`, `examples/jsm/**/*.js`, `llms.txt`, `LICENSE`, `README.md`, and `package.json`. The full tree is about 600 MB of example assets. Look up the class you're using in `docs/pages/<Class>.html.md`. Never edit or import from it. To resync, fetch the new tag, build a commit holding only those paths with `git update-index --index-info`, `git write-tree`, and `git commit-tree`, then `git subtree merge --squash --prefix .repos/three <commit>`.
+
+### Using `.repos/`
+
+The subtrees are large. Read from them only when it answers a question in front of you, so they don't bloat your context.
+
+Read `.repos/` when:
+
+- You're writing Effect code with a module or function you haven't checked this session, such as a new Schema combinator, Layer, or Stream API. Start from `.repos/effect/LLMS.md` and open only the file it points to.
+- You're using a three.js class, addon, or option you haven't checked this session. Open only `.repos/three/docs/pages/<Class>.html.md`.
+- A type error or runtime behavior from Effect or three.js contradicts what you expected. Read the source for that one symbol.
+- You're moving code off Effect 3 patterns. This is the only time to read `MIGRATION.md` or `migration/`.
+- You're bumping `effect` or `three`, to resync the subtree or check what changed in an API you already use.
+
+Don't read `.repos/`:
+
+- At the start of a session, or for general context.
+- For work that doesn't call the library, such as CSS, layout, copy, config, git, or routes that don't touch Effect or three.js.
+- For anything you've already read this session.
+- By grepping across a whole subtree or opening many files to explore. Look up the one symbol by its path.
+- In `.agents/`, `packages/*/CHANGELOG.md`, or packages this project doesn't use (`sql`, `atom`, `opentelemetry`, `vitest`, `tools`). `.agents/` is upstream's instructions for working on Effect itself, not on this app.
 
 ## Taste
 
-- Effect 4 differs from Effect 3, and from what you remember. Check `.repos/effect` for the real API before you write Effect code.
+- Effect 4 differs from Effect 3, and from what you remember. Check `.repos/effect` for the real API of anything you haven't already checked before you use it.
 - Server features are Effect services. Route handlers stay thin: decode input with Schema, call one service method, and map errors to responses.
 - Complexity belongs at the provider and retrieval boundaries. The gateway core stays small and predictable.
 - Reusable Effect functions use `Effect.fn("Service.operation")` with a stable span name. Keep `Effect.gen` for inline programs and layer construction.
