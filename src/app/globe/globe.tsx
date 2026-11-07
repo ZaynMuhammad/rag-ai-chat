@@ -47,15 +47,15 @@ function fieldOfViewFitting(aspect: number) {
 
 function loadEarthTextures(anisotropy: number) {
   const loader = new THREE.TextureLoader();
-  const load = (name: string, colorSpace: THREE.ColorSpace = THREE.NoColorSpace) => {
+  const load = (name: string) => {
     const texture = loader.load(`/textures/earth/${name}.jpg`);
-    texture.colorSpace = colorSpace;
     texture.anisotropy = anisotropy;
     return texture;
   };
+  const day = load("day");
+  day.colorSpace = THREE.SRGBColorSpace;
   return {
-    day: load("day", THREE.SRGBColorSpace),
-    bump: load("bump"),
+    day,
     roughness: load("roughness"),
     nightLights: load("night"),
     clouds: load("clouds"),
@@ -71,8 +71,6 @@ function createEarth(textures: EarthTextures) {
     sphere(EARTH_RADIUS),
     new THREE.MeshStandardMaterial({
       map: textures.day,
-      bumpMap: textures.bump,
-      bumpScale: 4,
       roughnessMap: textures.roughness,
       metalness: 0,
     }),
