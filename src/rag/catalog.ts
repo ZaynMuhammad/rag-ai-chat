@@ -1,15 +1,14 @@
-import { Article } from "./Article";
+import type { Article } from "./Article";
 
 const simpleWikipedia = (title: string) =>
   `https://simple.wikipedia.org/wiki/${encodeURIComponent(title.replaceAll(" ", "_"))}`;
 
-const article = (title: string, summary: string) =>
-  new Article({
-    id: title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-"),
-    title,
-    summary,
-    url: simpleWikipedia(title),
-  });
+const article = (title: string, summary: string): Article => ({
+  id: title.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-"),
+  title,
+  summary,
+  url: simpleWikipedia(title),
+});
 
 export const catalog: ReadonlyArray<Article> = [
   article(

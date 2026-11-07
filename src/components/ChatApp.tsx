@@ -7,14 +7,12 @@ import { readSse } from "@/gateway/sse";
 import { ArticlePicker } from "./ArticlePicker";
 import { ChatPanel, type UiMessage } from "./ChatPanel";
 
-type ArticleSummary = Pick<Article, "id" | "title" | "summary" | "url">;
-
 const toHistory = (messages: ReadonlyArray<UiMessage>): Array<ChatMessage> =>
   messages
     .filter((message) => !message.failed && message.content.length > 0)
     .map(({ role, content }) => ({ role, content }));
 
-export function ChatApp({ articles }: { articles: ReadonlyArray<ArticleSummary> }) {
+export function ChatApp({ articles }: { articles: ReadonlyArray<Article> }) {
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   const [messages, setMessages] = useState<ReadonlyArray<UiMessage>>([]);
   const [streaming, setStreaming] = useState(false);

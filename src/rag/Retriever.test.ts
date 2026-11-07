@@ -1,10 +1,14 @@
 import { assert, describe, it } from "@effect/vitest";
 import { Effect } from "effect";
-import { Article } from "./Article";
+import type { Article } from "./Article";
 import { Retriever } from "./Retriever";
 
-const article = (id: string, title: string, summary: string) =>
-  new Article({ id, title, summary, url: `https://example.test/${id}` });
+const article = (id: string, title: string, summary: string): Article => ({
+  id,
+  title,
+  summary,
+  url: `https://example.test/${id}`,
+});
 
 const articles = [
   article("moon", "Moon", "The Moon orbits Earth and causes tides."),

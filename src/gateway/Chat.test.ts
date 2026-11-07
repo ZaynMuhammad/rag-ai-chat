@@ -1,18 +1,18 @@
 import { assert, describe, it } from "@effect/vitest";
 import { Effect, Fiber, Layer, Stream } from "effect";
 import { TestClock } from "effect/testing";
-import { Article } from "@/rag/Article";
+import type { Article } from "@/rag/Article";
 import { Retriever } from "@/rag/Retriever";
 import { Chat } from "./Chat";
 import type { ChatEvent } from "./ChatProtocol";
 import { MockProvider, Provider, ProviderError } from "./Provider";
 
-const moon = new Article({
+const moon: Article = {
   id: "moon",
   title: "Moon",
   summary: "The Moon orbits Earth. It causes tides.",
   url: "https://example.test/moon",
-});
+};
 
 const retrieverLayer = Layer.succeed(Retriever, Retriever.make([moon]));
 

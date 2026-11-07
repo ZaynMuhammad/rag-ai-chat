@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from "effect";
-import { Article, Passage } from "./Article";
+import type { Article, Passage } from "./Article";
 import { catalog } from "./catalog";
 
 const stopWords = new Set([
@@ -7,7 +7,7 @@ const stopWords = new Set([
   "does", "did", "can", "with", "from", "that", "this", "about", "tell", "into", "its",
 ]);
 
-export const terms = (text: string) =>
+const terms = (text: string) =>
   new Set(
     text
       .toLowerCase()
@@ -26,13 +26,12 @@ const score = (queryTerms: ReadonlySet<string>, article: Article) => {
   return total;
 };
 
-const toPassage = (article: Article) =>
-  new Passage({
-    articleId: article.id,
-    title: article.title,
-    url: article.url,
-    text: article.summary,
-  });
+const toPassage = (article: Article): Passage => ({
+  articleId: article.id,
+  title: article.title,
+  url: article.url,
+  text: article.summary,
+});
 
 export class Retriever extends Context.Service<
   Retriever,

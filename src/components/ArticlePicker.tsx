@@ -3,8 +3,6 @@
 import { useState } from "react";
 import type { Article } from "@/rag/Article";
 
-type ArticleSummary = Pick<Article, "id" | "title" | "summary" | "url">;
-
 export function ArticlePicker({
   articles,
   selectedIds,
@@ -12,7 +10,7 @@ export function ArticlePicker({
   onSelectAll,
   onClear,
 }: {
-  articles: ReadonlyArray<ArticleSummary>;
+  articles: ReadonlyArray<Article>;
   selectedIds: ReadonlySet<string>;
   onToggle: (id: string) => void;
   onSelectAll: (ids: ReadonlyArray<string>) => void;

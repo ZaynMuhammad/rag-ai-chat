@@ -22,7 +22,7 @@ export class Provider extends Context.Service<
 
 const firstSentence = (text: string) => text.split(/(?<=\.)\s/)[0] ?? text;
 
-export const mockReply = ({ messages, passages }: ProviderInput) => {
+const mockReply = ({ messages, passages }: ProviderInput) => {
   const question = messages.findLast((message) => message.role === "user")?.content ?? "";
   if (passages.length === 0) {
     return `This is the mock provider. No passages matched, so this answer is not grounded. You asked: "${question}"`;
