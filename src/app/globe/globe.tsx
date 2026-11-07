@@ -12,6 +12,7 @@ const SPHERE_HEIGHT_SEGMENTS = 64;
 const SUN_DIRECTION = new THREE.Vector3(5, 3, 5).normalize();
 const CLOUD_DRIFT_RADIANS_PER_SECOND = 0.008;
 const MIN_FIELD_OF_VIEW_DEGREES = 45;
+const MAX_PIXEL_RATIO = 2;
 
 const nightLightsVertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -121,7 +122,7 @@ export function Globe() {
     if (!container) return;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
     container.appendChild(renderer.domElement);
 
     const textures = loadEarthTextures(renderer.capabilities.getMaxAnisotropy());
