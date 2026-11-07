@@ -73,7 +73,6 @@ function createEarth(textures: EarthTextures) {
     new THREE.MeshStandardMaterial({
       map: textures.day,
       roughnessMap: textures.roughness,
-      metalness: 0,
     }),
   );
   const nightLights = new THREE.Mesh(
@@ -94,7 +93,6 @@ function createEarth(textures: EarthTextures) {
   const clouds = new THREE.Mesh(
     sphere(CLOUDS_RADIUS),
     new THREE.MeshStandardMaterial({
-      color: "#ffffff",
       alphaMap: textures.clouds,
       transparent: true,
       depthWrite: false,
