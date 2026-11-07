@@ -58,7 +58,10 @@ Treat the rest of this document as good defaults, not hard rules. The developer'
 
 ## Verifying
 
-- Before you push, run `bun run lint`, `bun run typecheck`, and `bun run build`.
+- `bun run check` runs format check, lint, typecheck, and tests. Run it before you call work done, and run `bun run build` too before you push. CI runs the same steps.
+- `bun run format` and `bun run lint:fix` fix most failures. Do not silence a lint rule to get green. If a rule is wrong for the case, disable it on that line and say why in your summary.
+- `typecheck` also runs the Effect language service, which fails on Effects that are never yielded or run.
+- Tests use Vitest with `@effect/vitest`. Put them next to the code as `*.test.ts`, write them with `it.effect`, and import helpers from `@effect/vitest`, not `vitest`. Network calls to anything other than localhost throw in tests.
 - Backend behavior changes ship with focused tests for that behavior.
 - Test behavior that can break: rate limiting, token rotation, provider failover, stream translation, retrieval ranking, cache keys, and anything that touches privacy. Leave out tests for what types already guarantee and trivial wiring.
 - Test at the lowest layer that fails without your change. Do not repeat the case in a wrapper test.
