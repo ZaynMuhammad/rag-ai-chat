@@ -70,7 +70,11 @@ export function ChatApp({ articles }: { articles: ReadonlyArray<Article> }) {
         }
       }
     } catch {
-      if (!controller.signal.aborted) {
+      if (controller.signal.aborted) {
+        setMessages((current) =>
+          current.filter((message) => message.id !== assistantId || message.content !== ""),
+        );
+      } else {
         updateMessage(assistantId, (message) => ({
           ...message,
           content: "Something went wrong. Try again.",
