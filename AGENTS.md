@@ -103,7 +103,7 @@ Don't read `.repos/`:
 - For work that doesn't call the library, such as CSS, layout, copy, config, git, or routes that don't touch Effect or three.js.
 - For anything you've already read this session.
 - By grepping across a whole subtree or opening many files to explore. Look up the one symbol by its path.
-- In `.agents/`, `packages/*/CHANGELOG.md`, or packages this project doesn't use (`sql`, `atom`, `opentelemetry`, `vitest`, `tools`). `.agents/` is upstream's instructions for working on Effect itself, not on this app.
+- In `.agents/`, `packages/*/CHANGELOG.md`, or packages this project doesn't use (`sql`, `atom`, `opentelemetry`, `tools`). `.agents/` is upstream's instructions for working on Effect itself, not on this app.
 
 ## Taste
 
