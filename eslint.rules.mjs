@@ -1,5 +1,5 @@
 const allowedCommentDirective =
-  /^\s*(eslint-|eslint\s|@ts-expect-error|@ts-ignore|@vitest-environment|prettier-ignore|global\s)/;
+  /^\s*(eslint-|eslint\s|@ts-expect-error|@vitest-environment|prettier-ignore|global\s)/;
 
 const noComments = {
   meta: {
