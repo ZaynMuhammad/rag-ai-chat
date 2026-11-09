@@ -114,7 +114,7 @@ const deadline = Duration.seconds(2);
 const chatWith = (...providers: Arr.NonEmptyReadonlyArray<ChatProvider>) =>
   GroundedChat.layer(providers, deadline).pipe(
     Layer.provide(CircuitBreaker.layer),
-    Layer.provide(Retriever.layer),
+    Layer.provide(Retriever.layerBm25),
     Layer.provide(fixture),
   );
 

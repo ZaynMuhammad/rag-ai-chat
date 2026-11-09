@@ -68,7 +68,7 @@ const gateway = Layer.mergeAll(
     Layer.provide(RateLimiter.layerStoreMemory),
   ),
 ).pipe(
-  Layer.provide(observedRetrieval.pipe(Layer.provide(Retriever.layer))),
+  Layer.provide(observedRetrieval.pipe(Layer.provide(Retriever.layerBm25))),
   Layer.provide(fixture),
 );
 

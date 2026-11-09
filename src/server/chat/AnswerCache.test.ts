@@ -483,7 +483,7 @@ describe("answerCacheLayer", () => {
       const uncached = yield* ask(question("Who created Tetris?")).pipe(
         Effect.provide(
           groundedChat.pipe(
-            Layer.provide(Retriever.layer),
+            Layer.provide(Retriever.layerBm25),
             Layer.provide(fixture),
           ),
         ),
@@ -496,7 +496,7 @@ describe("answerCacheLayer", () => {
         Effect.provide(
           answerCacheLayer(options).pipe(
             Layer.provide(groundedChat),
-            Layer.provide(Retriever.layer),
+            Layer.provide(Retriever.layerBm25),
             Layer.provide(fixture),
           ),
         ),

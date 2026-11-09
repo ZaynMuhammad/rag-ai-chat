@@ -139,6 +139,16 @@ export const migrations = {
       WHERE game_qid NOT IN (SELECT game_qid FROM studios)
     `;
   }),
+  "0006_passage_embeddings": Effect.gen(function* () {
+    const sql = yield* SqlClient.SqlClient;
+    yield* sql`
+      CREATE TABLE passage_embeddings (
+        passage_id TEXT PRIMARY KEY REFERENCES passages (id),
+        vector BLOB NOT NULL,
+        scale REAL NOT NULL
+      ) WITHOUT ROWID
+    `;
+  }),
 };
 
 const rowsPerStatement = 500;
@@ -182,6 +192,28 @@ export class PassageText extends Schema.Class<PassageText>(
   text: Schema.String,
 }) {}
 
+export class PassageToEmbed extends Schema.Class<PassageToEmbed>(
+  "rag-ai-chat/corpus/PassageToEmbed",
+)({
+  rowid: Schema.Number,
+  id: Schema.String,
+  heading: Schema.String,
+  text: Schema.String,
+}) {}
+
+export interface PassageEmbedding {
+  readonly passageId: string;
+  readonly vector: Uint8Array;
+  readonly scale: number;
+}
+
+export class EmbeddingProgress extends Schema.Class<EmbeddingProgress>(
+  "rag-ai-chat/corpus/EmbeddingProgress",
+)({
+  passages: Schema.Number,
+  embedded: Schema.Number,
+}) {}
+
 export class CorpusStats extends Schema.Class<CorpusStats>(
   "rag-ai-chat/corpus/CorpusStats",
 )({
@@ -210,6 +242,14 @@ export class CorpusStore extends Context.Service<
         readonly documents: number;
       }>,
     ): Effect.Effect<void>;
+    passagesToEmbedAfter(
+      rowid: number,
+      limit: number,
+    ): Effect.Effect<ReadonlyArray<PassageToEmbed>>;
+    saveEmbeddings(
+      embeddings: ReadonlyArray<PassageEmbedding>,
+    ): Effect.Effect<void>;
+    readonly embeddingProgress: Effect.Effect<EmbeddingProgress>;
     readonly ingestedShards: Effect.Effect<ReadonlySet<string>>;
     readonly gameTitles: Effect.Effect<ReadonlyArray<GameTitle>>;
     passagesOf(
@@ -357,6 +397,51 @@ export class CorpusStore extends Context.Service<
         Effect.orDie,
       );
 
+      const passagesToEmbedAfter = Effect.fn(
+        "CorpusStore.passagesToEmbedAfter",
+      )(function* (rowid: number, limit: number) {
+        return yield* SqlSchema.findAll({
+          Request: Schema.Void,
+          Result: PassageToEmbed,
+          execute: () => sql`
+            SELECT rowid, id, heading, text FROM passages
+            WHERE rowid > ${rowid}
+              AND NOT EXISTS (
+                SELECT 1 FROM passage_embeddings WHERE passage_id = passages.id
+              )
+            ORDER BY rowid LIMIT ${limit}
+          `,
+        })(undefined);
+      }, Effect.orDie);
+
+      const saveEmbeddings = Effect.fn("CorpusStore.saveEmbeddings")(
+        function* (embeddings: ReadonlyArray<PassageEmbedding>) {
+          yield* insertInBatches(
+            "passage_embeddings",
+            embeddings.map((embedding) => ({
+              passage_id: embedding.passageId,
+              vector: embedding.vector,
+              scale: embedding.scale,
+            })),
+          );
+        },
+        sql.withTransaction,
+        Effect.orDie,
+      );
+
+      const embeddingProgress = SqlSchema.findOne({
+        Request: Schema.Void,
+        Result: EmbeddingProgress,
+        execute: () => sql`
+          SELECT
+            (SELECT COUNT(*) FROM passages) AS passages,
+            (SELECT COUNT(*) FROM passage_embeddings) AS embedded
+        `,
+      })(undefined).pipe(
+        Effect.orDie,
+        Effect.withSpan("CorpusStore.embeddingProgress"),
+      );
+
       const ingestedShards = SqlSchema.findAll({
         Request: Schema.Void,
         Result: Schema.Struct({ name: Schema.String }),
@@ -412,6 +497,11 @@ export class CorpusStore extends Context.Service<
                 url = ${article.url},
                 description = ${article.description}
               WHERE qid = ${article.qid}
+            `;
+            yield* sql`
+              DELETE FROM passage_embeddings WHERE passage_id IN (
+                SELECT id FROM passages WHERE game_qid = ${article.qid}
+              )
             `;
             yield* sql`DELETE FROM passages WHERE game_qid = ${article.qid}`;
           }
@@ -502,6 +592,9 @@ export class CorpusStore extends Context.Service<
         rebuildSearchIndex,
         passageTextsAfter,
         saveCommonTerms,
+        passagesToEmbedAfter,
+        saveEmbeddings,
+        embeddingProgress,
         ingestedShards,
         saveShard,
         stats,
