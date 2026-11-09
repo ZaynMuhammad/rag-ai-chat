@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-import type { RetrievedPassage } from "@/server/search/Retriever";
+import type { RetrievedPassage } from "@/server/search/Passage";
 import { groundedTurn, parseGroundedTurn } from "./GroundedPrompt";
 
 const passage = (heading: string, text: string): RetrievedPassage => ({

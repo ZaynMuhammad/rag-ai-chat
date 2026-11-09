@@ -1,5 +1,5 @@
 import type { Prompt } from "effect/ai";
-import type { RetrievedPassage } from "@/server/search/Retriever";
+import type { RetrievedPassage } from "@/server/search/Passage";
 import type { ChatMessage } from "./ChatProtocol";
 
 export const instructions = [

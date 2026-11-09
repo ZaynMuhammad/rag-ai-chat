@@ -1,18 +1,7 @@
 import { Context, Effect, Layer, Schema } from "effect";
 import { SqlClient, SqlSchema } from "effect/sql";
 import { Scope, scopeConditions } from "@/server/games/Scope";
-
-export const RetrievedPassage = Schema.Struct({
-  id: Schema.String,
-  gameQid: Schema.String,
-  title: Schema.String,
-  released: Schema.NullOr(Schema.String),
-  heading: Schema.String,
-  text: Schema.String,
-  url: Schema.NullOr(Schema.String),
-  revisionId: Schema.NullOr(Schema.Number),
-});
-export type RetrievedPassage = typeof RetrievedPassage.Type;
+import { RetrievedPassage } from "./Passage";
 
 export interface SearchRequest {
   readonly query: string;

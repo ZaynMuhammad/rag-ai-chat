@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 import { Scope } from "@/server/games/Scope";
-import { RetrievedPassage } from "@/server/search/Retriever";
+import { RetrievedPassage } from "@/server/search/Passage";
 
 export const ChatMessage = Schema.Struct({
   role: Schema.Literals(["user", "assistant"]),
