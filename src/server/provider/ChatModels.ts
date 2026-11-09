@@ -20,17 +20,32 @@ const anthropic = (model: string) =>
     Layer.orDie,
   );
 
-export const chatPlan: Effect.Effect<ChatPlan, Config.ConfigError> = Effect.gen(
-  function* () {
-    const apiKey = yield* Config.option(Config.Redacted("ANTHROPIC_API_KEY"));
-    if (Option.isNone(apiKey))
-      return ExecutionPlan.make({ provide: extractive });
-    const model = yield* Config.String("ANTHROPIC_MODEL").pipe(
+const anthropicModel = Effect.gen(function* () {
+  const apiKey = yield* Config.option(Config.Redacted("ANTHROPIC_API_KEY"));
+  if (Option.isNone(apiKey)) return Option.none<string>();
+  return Option.some(
+    yield* Config.String("ANTHROPIC_MODEL").pipe(
       Config.withDefault("claude-haiku-5-5"),
-    );
-    return ExecutionPlan.make(
-      { provide: anthropic(model), attempts: 2 },
-      { provide: extractive },
-    );
-  },
+    ),
+  );
+});
+
+export const chatPlan: Effect.Effect<ChatPlan, Config.ConfigError> = Effect.map(
+  anthropicModel,
+  Option.match({
+    onNone: () => ExecutionPlan.make({ provide: extractive }),
+    onSome: (model) =>
+      ExecutionPlan.make(
+        { provide: anthropic(model), attempts: 2 },
+        { provide: extractive },
+      ),
+  }),
+);
+
+export const chatPlanIdentity = Effect.map(
+  anthropicModel,
+  Option.match({
+    onNone: () => "mock-extractive",
+    onSome: (model) => `anthropic:${model},mock-extractive`,
+  }),
 );
