@@ -67,7 +67,7 @@ const extractive = MockProvider.extractive({ tokenDelay: Duration.zero });
 
 const chatWith = (plan: ChatPlan) =>
   GroundedChat.layer(plan).pipe(
-    Layer.provide(Retriever.layer),
+    Layer.provide(Retriever.layerBm25),
     Layer.provide(fixture),
   );
 

@@ -2,12 +2,22 @@ import { assert, describe, it, layer } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import {
   corpusFixture,
+  embedFixturePassages,
   japan,
   sovietUnion,
   unitedStates,
 } from "@/server/corpus/CorpusFixture";
 import type { Scope } from "@/server/games/Scope";
-import { matchExpression, Retriever, searchTerms } from "./Retriever";
+import { DenseIndex } from "./DenseIndex";
+import { Embedder } from "./Embedder";
+import {
+  defaultFusionOptions,
+  defaultRetrieverOptions,
+  type FusionOptions,
+  matchExpression,
+  Retriever,
+  searchTerms,
+} from "./Retriever";
 
 const fixture = corpusFixture([
   {
@@ -92,48 +102,108 @@ describe("searchTerms", () => {
   });
 });
 
-layer(Retriever.layer.pipe(Layer.provideMerge(fixture)))("Retriever", (it) => {
-  it.effect("ranks the passage that answers the question first", () =>
-    Effect.gen(function* () {
-      const [first] = yield* search("Who created Tetris?");
-      assert.strictEqual(first, "Q1#0");
+layer(Retriever.layerBm25.pipe(Layer.provideMerge(fixture)))(
+  "Retriever",
+  (it) => {
+    it.effect("ranks the passage that answers the question first", () =>
+      Effect.gen(function* () {
+        const [first] = yield* search("Who created Tetris?");
+        assert.strictEqual(first, "Q1#0");
+      }),
+    );
+
+    it.effect("matches stemmed forms of a word", () =>
+      Effect.gen(function* () {
+        assert.deepStrictEqual((yield* search("developers")).sort(), [
+          "Q2#0",
+          "Q3#0",
+        ]);
+      }),
+    );
+
+    it.effect("only returns passages from games inside the scope", () =>
+      Effect.gen(function* () {
+        assert.deepStrictEqual(
+          yield* search("falling block puzzle", { region: "Asia" }),
+          ["Q2#0"],
+        );
+        assert.deepStrictEqual(
+          (yield* search("falling block puzzle", {
+            from: 1980,
+            to: 1989,
+          })).sort(),
+          ["Q1#0", "Q1#1"],
+        );
+        assert.deepStrictEqual(
+          yield* search("falling block puzzle", { gameQid: "Q1" }),
+          ["Q1#1", "Q1#0"],
+        );
+      }),
+    );
+
+    it.effect(
+      "returns nothing, without querying, for a question with no searchable words",
+      () =>
+        Effect.gen(function* () {
+          assert.deepStrictEqual(yield* search("what is the?"), []);
+        }),
+    );
+  },
+);
+
+const fused = (
+  mode: FusionOptions["mode"],
+  unembedded: ReadonlyArray<string>,
+) =>
+  Layer.effect(
+    Retriever,
+    Retriever.makeFused(defaultRetrieverOptions, {
+      ...defaultFusionOptions,
+      mode,
     }),
+  ).pipe(
+    Layer.provideMerge(DenseIndex.layer),
+    Layer.provideMerge(embedFixturePassages(unembedded)),
+    Layer.provideMerge(Embedder.hashed(64)),
+    Layer.provideMerge(fixture),
   );
 
-  it.effect("matches stemmed forms of a word", () =>
-    Effect.gen(function* () {
-      assert.deepStrictEqual((yield* search("developers")).sort(), [
-        "Q2#0",
-        "Q3#0",
-      ]);
-    }),
+layer(fused("hybrid", ["Q3#0"]))("Retriever in hybrid mode", (it) => {
+  it.effect(
+    "still finds a passage through BM25 before it has an embedding",
+    () =>
+      Effect.gen(function* () {
+        const [first] = yield* search("Doom first-person shooter in Texas");
+        assert.strictEqual(first, "Q3#0");
+      }),
   );
 
-  it.effect("only returns passages from games inside the scope", () =>
+  it.effect("applies the scope to both rankings", () =>
     Effect.gen(function* () {
       assert.deepStrictEqual(
         yield* search("falling block puzzle", { region: "Asia" }),
         ["Q2#0"],
       );
       assert.deepStrictEqual(
-        (yield* search("falling block puzzle", {
-          from: 1980,
-          to: 1989,
-        })).sort(),
+        (yield* search("Doom shooter", { gameQid: "Q1" })).sort(),
         ["Q1#0", "Q1#1"],
-      );
-      assert.deepStrictEqual(
-        yield* search("falling block puzzle", { gameQid: "Q1" }),
-        ["Q1#1", "Q1#0"],
       );
     }),
   );
 
-  it.effect(
-    "returns nothing, without querying, for a question with no searchable words",
-    () =>
-      Effect.gen(function* () {
-        assert.deepStrictEqual(yield* search("what is the?"), []);
-      }),
+  it.effect("returns nothing for a question with no searchable words", () =>
+    Effect.gen(function* () {
+      assert.deepStrictEqual(yield* search("what is the?"), []);
+    }),
+  );
+});
+
+layer(fused("dense", ["Q3#0"]))("Retriever in dense mode", (it) => {
+  it.effect("ranks only passages that have an embedding", () =>
+    Effect.gen(function* () {
+      const found = yield* search("Doom first-person shooter in Texas");
+      assert.notInclude(found, "Q3#0");
+      assert.isNotEmpty(found);
+    }),
   );
 });

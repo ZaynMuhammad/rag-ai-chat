@@ -1,7 +1,9 @@
 import { SqliteClient, SqliteMigrator } from "@effect/sql-sqlite-node";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
-import { migrations } from "@/corpus/CorpusStore";
+import { CorpusStore, migrations } from "@/corpus/CorpusStore";
+import { Embedder, passageInput } from "@/server/search/Embedder";
+import { codesToBlob, quantize } from "@/server/search/Vectors";
 
 export interface FixtureGame {
   readonly qid: string;
@@ -129,3 +131,23 @@ export const corpusFixture = (games: ReadonlyArray<FixtureGame>) =>
     Layer.provideMerge(SqliteClient.layer({ filename: ":memory:" })),
     Layer.orDie,
   );
+
+export const embedFixturePassages = (skip: ReadonlyArray<string> = []) =>
+  Layer.effectDiscard(
+    Effect.gen(function* () {
+      const store = yield* CorpusStore;
+      const embedder = yield* Embedder;
+      const passages = (yield* store.passagesToEmbedAfter(0, 10_000)).filter(
+        (passage) => !skip.includes(passage.id),
+      );
+      const vectors = yield* embedder.embedPassages(passages.map(passageInput));
+      yield* store.saveEmbeddings(
+        passages.flatMap((passage, index) => {
+          const vector = vectors[index];
+          if (vector === undefined) return [];
+          const { codes, scale } = quantize(vector);
+          return [{ passageId: passage.id, vector: codesToBlob(codes), scale }];
+        }),
+      );
+    }),
+  ).pipe(Layer.provide(CorpusStore.layer));
