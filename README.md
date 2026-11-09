@@ -46,6 +46,13 @@ The extractive mock quotes retrieved sentences verbatim and cites each one, so c
 | Errors                                                    | 0                      | 0                          |
 | Time to first token p50 / p95 / p99                       | 992 / 7,608 / 8,969 ms | 117 / 436 / 608 ms         |
 
+| Outage: 4 chats/s for 60 s, production build; the primary hangs at 15 s, fails at 30 s, recovers at 45 s | before: retry every request | circuit breaker + 2 s first-token deadline       |
+| -------------------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------------------------ |
+| Errors                                                                                                   | 26.3%, all stuck past 30 s  | 0                                                |
+| While the primary hangs (15–30 s)                                                                        | 59 of 60 requests stuck     | all answered; TTFT p50 3.4 s for 5 s, then 0.2 s |
+| While the primary fails (30–45 s), TTFT p50 per 5 s                                                      | 1.4–2.3 s                   | 0.16–0.18 s                                      |
+| Back on the primary after it recovers                                                                    | at once                     | after the 10 s cooldown                          |
+
 ## How it works
 
 ```text
@@ -62,8 +69,9 @@ question + scope (region, years, or one game)
 - **Corpus.** [`src/corpus`](src/corpus) and [`scripts/corpus`](scripts/corpus) build `data/corpus/games.sqlite`. Wikidata picks the games, their countries of origin, their developers' headquarters cities, and their genres. A headquarters that is a whole country is dropped, so the game falls back to its country. UN M49 turns a country into a region. Wikimedia's pre-parsed `structured-wikipedia` dump supplies the text, joined on Wikidata QID, so renames and redirects don't matter.
 - **Release dates** keep the precision Wikidata states, so a game known only by year shows "1985", not "1 Jan 1985". Truncated ISO dates sort correctly as plain strings.
 - **Retrieval** is BM25 in SQLite FTS5 (porter stemming, diacritics folded), filtered by the same scope as browsing. It reads the corpus through `node:sqlite`, so there is no native addon. [`Retriever.ts`](src/server/search/Retriever.ts)
-- **Grounded chat** sends the retrieved passages first, then streams the answer. Providers form an Effect `ExecutionPlan`: if one fails before its first token, the next takes over; once tokens have streamed, a failure is reported rather than restarted. When nothing in scope matches, it says so without calling a model. [`GroundedChat.ts`](src/server/chat/GroundedChat.ts)
-- **Providers.** With no `ANTHROPIC_API_KEY`, the only provider is `mock-extractive`, which quotes the best-matching retrieved sentences with citations. Dev, tests, and load tests never spend money. With a key, Claude Haiku 5.5 answers at low effort, and the mock is the fallback.
+- **Grounded chat** sends the retrieved passages first, then streams the answer. When nothing in scope matches, it says so without calling a model. [`GroundedChat.ts`](src/server/chat/GroundedChat.ts)
+- **Failover.** Providers form an Effect `ExecutionPlan`. A provider that fails, or sends no token within `FIRST_TOKEN_TIMEOUT` (2 s), hands over to the next; once tokens have streamed, a failure is reported rather than restarted. A per-provider circuit breaker opens after 5 consecutive failures or half the calls in 30 s, and requests then skip that provider without calling it. After 10 s one probe goes through, and a success closes it. The last provider in the plan is never cut off, since nothing is left to fail over to. State is in memory, per process, and labeled only by provider. [`CircuitBreaker.ts`](src/server/provider/CircuitBreaker.ts)
+- **Providers.** With no keys, the only provider is `mock-extractive`, which quotes the best-matching retrieved sentences with citations. Dev, tests, and load tests never spend money. With `ANTHROPIC_API_KEY`, Claude Haiku 5.5 answers at low effort. With `OPENAI_MODEL`, any OpenAI-compatible endpoint joins the plan: OpenAI, Groq, Together, or a local Ollama. The mock is always the last fallback. `GET /api/models` lists the configured models in fallback order, and a chat may pick one with `model`: it goes first, and the rest stay as fallback. [`ChatModels.ts`](src/server/provider/ChatModels.ts)
 
 ## Privacy
 
@@ -115,13 +123,18 @@ bun run corpus:build         # about 20 minutes and 37 GB streamed; keeps a 300 
 bun run dev                  # http://localhost:3000
 ```
 
-| Environment variable          | Default                    | Effect                                                                                    |
-| ----------------------------- | -------------------------- | ----------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`           | unset                      | Unset: the free extractive mock answers. Set: Claude answers.                             |
-| `ANTHROPIC_MODEL`             | `claude-haiku-5-5`         | Model used when a key is set                                                              |
-| `RETRIEVAL_COMMON_WORD_SHARE` | unset                      | e.g. `0.1`: every match needs a word found in under 10% of passages (faster, see Numbers) |
-| `SESSION_SECRET`              | random per process         | HMAC key for session tokens; set it when running more than one process                    |
-| `CORPUS_DATABASE`             | `data/corpus/games.sqlite` | Corpus location                                                                           |
+| Environment variable          | Default                     | Effect                                                                                    |
+| ----------------------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`           | unset                       | Unset: the free extractive mock answers. Set: Claude answers.                             |
+| `ANTHROPIC_MODEL`             | `claude-haiku-5-5`          | Model used when a key is set                                                              |
+| `OPENAI_MODEL`                | unset                       | Set: an OpenAI-compatible model joins the plan, e.g. `gpt-5-mini` or `llama3.2:3b`        |
+| `OPENAI_BASE_URL`             | `https://api.openai.com/v1` | e.g. `https://api.groq.com/openai/v1` or `http://localhost:11434/v1` for Ollama           |
+| `OPENAI_API_KEY`              | unset                       | Bearer key for that endpoint; Ollama needs none                                           |
+| `FIRST_TOKEN_TIMEOUT`         | `2 seconds`                 | How long a provider may take to send its first token before the next one takes over       |
+| `MOCK_PRIMARY`                | unset                       | e.g. `ok@15,hang@15,outage@15,ok`: a scheduled mock ahead of the others, for load tests   |
+| `RETRIEVAL_COMMON_WORD_SHARE` | unset                       | e.g. `0.1`: every match needs a word found in under 10% of passages (faster, see Numbers) |
+| `SESSION_SECRET`              | random per process          | HMAC key for session tokens; set it when running more than one process                    |
+| `CORPUS_DATABASE`             | `data/corpus/games.sqlite`  | Corpus location                                                                           |
 
 ## Evals and load
 
@@ -133,6 +146,9 @@ bun run evals:answers --check  # fails if any metric drops more than 0.02 in a g
 EVAL_PROVIDER=anthropic EVAL_LIMIT=30 bun run evals:answers --estimate  # cost ceiling for a real-model run, no calls made
 bun run build && bun run start &
 LOAD_BASE_URL=http://localhost:3000 LOAD_RPS=4 LOAD_SECONDS=60 bun run load:steady
+MOCK_PRIMARY=ok@15,hang@15,outage@15,ok bun run start &   # restart with a misbehaving primary
+LOAD_BASE_URL=http://localhost:3000 bun run load:outage   # per-5 s buckets: errors, TTFT, which model answered
+LOAD_BASE_URL=http://localhost:3000 bun run load:spike    # 4 chats/s with a 10 s burst at 5x
 ```
 
 ## Checks

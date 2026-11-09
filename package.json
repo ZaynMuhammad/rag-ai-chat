@@ -22,11 +22,14 @@
     "evals:retrieval": "bun scripts/evals/run-retrieval.ts",
     "evals:answers": "bun scripts/evals/run-answers.ts",
     "load:steady": "bun scripts/load/steady-chat.ts",
+    "load:outage": "bun scripts/load/outage-chat.ts",
+    "load:spike": "bun scripts/load/spike-chat.ts",
     "bench:pro": "bun build scripts/pro/bench-signing.ts --target=node --outfile=.next/bench-signing.mjs && node .next/bench-signing.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
     "@effect/ai-anthropic": "4.1.2",
+    "@effect/ai-openai-compat": "4.1.2",
     "@effect/platform-bun": "4.1.2",
     "@effect/sql-sqlite-bun": "4.1.2",
     "@effect/sql-sqlite-node": "4.1.2",
