@@ -3,7 +3,6 @@ import {
   type Duration,
   Effect,
   ExecutionPlan,
-  Latch,
   Layer,
   Ref,
   Schema,
@@ -36,21 +35,18 @@ export class FirstTokenTimeout extends Schema.TaggedError<FirstTokenTimeout>()(
 const firstTokenWithin =
   (deadline: Duration.Input) =>
   <A, E, R>(stream: Stream.Stream<A, E, R>) =>
-    Stream.unwrap(
-      Effect.map(Latch.make(), (firstToken) =>
-        stream.pipe(
-          Stream.onFirst(() => firstToken.open),
-          Stream.interruptWhen(
-            firstToken.await.pipe(
-              Effect.timeoutOrElse({
-                duration: deadline,
-                orElse: () => Effect.fail(new FirstTokenTimeout()),
-              }),
-              Effect.andThen(Effect.never),
-            ),
-          ),
-        ),
-      ),
+    Stream.transformPull(stream, (pull) =>
+      Effect.sync(() => {
+        let awaitingFirstToken = true;
+        return Effect.suspend(() => {
+          if (!awaitingFirstToken) return pull;
+          awaitingFirstToken = false;
+          return Effect.timeoutOrElse(pull, {
+            duration: deadline,
+            orElse: () => Effect.fail(new FirstTokenTimeout()),
+          });
+        });
+      }),
     );
 
 const isTextDelta = (part: Response.AnyPart): part is Response.TextDeltaPart =>
