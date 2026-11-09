@@ -9,7 +9,7 @@ import { RetrievedPassage, type SearchRequest } from "./Passage";
 
 export const RetrievalMode = Schema.Literals(["bm25", "dense", "hybrid"]);
 export type RetrievalMode = typeof RetrievalMode.Type;
-export const defaultRetrievalMode: RetrievalMode = "bm25";
+export const defaultRetrievalMode: RetrievalMode = "dense";
 
 const stopWords = new Set(
   (
@@ -71,6 +71,12 @@ const SearchRow = Schema.Struct({
   limit: Schema.Number,
   scope: Scope,
 });
+
+const hasEmbeddings = Effect.gen(function* () {
+  const sql = yield* SqlClient.SqlClient;
+  const rows = yield* sql`SELECT 1 FROM passage_embeddings LIMIT 1`;
+  return rows.length > 0;
+}).pipe(Effect.orElseSucceed(() => false));
 
 export class Retriever extends Context.Service<
   Retriever,
@@ -184,7 +190,13 @@ export class Retriever extends Context.Service<
         ...defaultRetrieverOptions,
         commonTermShare: Option.getOrNull(commonTermShare),
       };
-      return mode === "bm25"
+      const dense = mode !== "bm25" && (yield* hasEmbeddings);
+      if (mode !== "bm25" && !dense) {
+        yield* Effect.logWarning(
+          `RETRIEVAL_MODE=${mode}, but the corpus has no passage embeddings. Using bm25 until bun run corpus:embed has run.`,
+        );
+      }
+      return mode === "bm25" || !dense
         ? Layer.effect(Retriever, Retriever.make(options))
         : Layer.effect(
             Retriever,

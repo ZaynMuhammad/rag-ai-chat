@@ -1,5 +1,5 @@
 import { assert, describe, it, layer } from "@effect/vitest";
-import { Effect, Layer } from "effect";
+import { ConfigProvider, Effect, Layer } from "effect";
 import {
   corpusFixture,
   embedFixturePassages,
@@ -204,6 +204,24 @@ layer(fused("dense", ["Q3#0"]))("Retriever in dense mode", (it) => {
       const found = yield* search("Doom first-person shooter in Texas");
       assert.notInclude(found, "Q3#0");
       assert.isNotEmpty(found);
+    }),
+  );
+});
+
+layer(
+  Retriever.layer.pipe(
+    Layer.provideMerge(fixture),
+    Layer.provide(
+      ConfigProvider.layer(
+        ConfigProvider.fromUnknown({ RETRIEVAL_MODE: "hybrid" }),
+      ),
+    ),
+  ),
+)("Retriever in hybrid mode before anything is embedded", (it) => {
+  it.effect("answers with BM25 instead of loading the embedding model", () =>
+    Effect.gen(function* () {
+      const [first] = yield* search("Who created Tetris?");
+      assert.strictEqual(first, "Q1#0");
     }),
   );
 });
