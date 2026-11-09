@@ -3,6 +3,7 @@ import { Effect, FileSystem, Layer, Stream } from "effect";
 import { articleBlocks } from "../../src/corpus/ArticleBlocks";
 import { buildCatalog } from "../../src/corpus/Catalog";
 import { chunkArticle } from "../../src/corpus/Chunker";
+import { earliestReleases } from "../../src/corpus/ReleaseDate";
 import { CorpusStore } from "../../src/corpus/CorpusStore";
 import {
   StructuredWikipedia,
@@ -68,6 +69,14 @@ const program = Effect.gen(function* () {
   yield* store.saveCatalog(catalog.games);
   const qids = new Set(catalog.games.map((game) => game.qid));
 
+  const releases = earliestReleases(
+    yield* (yield* Wikidata).releaseDates([...qids]),
+  );
+  yield* store.saveReleases(releases);
+  yield* Effect.logInfo(
+    `Wikidata: ${releases.length}/${qids.size} games have a release date`,
+  );
+
   const done = yield* store.ingestedShards;
   const pending = (yield* wikipedia.shards).filter(
     (shard) => !done.has(shard.name),
@@ -91,6 +100,7 @@ const program = Effect.gen(function* () {
     Stream.runDrain,
   );
 
+  yield* store.rebuildSearchIndex;
   const stats = yield* store.stats;
   yield* Effect.logInfo(
     `Corpus at ${corpusDatabasePath}: ${stats.gamesWithText}/${stats.games} games with text, ` +

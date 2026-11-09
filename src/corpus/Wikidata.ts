@@ -1,10 +1,19 @@
-import { Context, Effect, flow, Layer, Schedule, Schema } from "effect";
+import {
+  Array as Arr,
+  Context,
+  Effect,
+  flow,
+  Layer,
+  Schedule,
+  Schema,
+} from "effect";
 import {
   FetchHttpClient,
   HttpClient,
   HttpClientRequest,
   HttpClientResponse,
 } from "effect/http";
+import type { ReleaseDateRow } from "./ReleaseDate";
 
 const endpoint = "https://query.wikidata.org/sparql";
 const userAgent =
@@ -29,6 +38,12 @@ const GameOriginResults = sparqlResults({
   title: Binding,
   origin: Binding,
   source: Schema.Struct({ value: OriginSource }),
+});
+
+const ReleaseDateResults = sparqlResults({
+  game: Binding,
+  date: Binding,
+  precision: Binding,
 });
 
 const PlaceResults = sparqlResults({
@@ -81,6 +96,14 @@ SELECT ?place ?label ?iso2 ?coordinates WHERE {
   OPTIONAL { ?place wdt:P625 ?coordinates }
 }`;
 
+export const releaseDatesQuery = (qids: ReadonlyArray<string>) => `
+SELECT ?game ?date ?precision WHERE {
+  VALUES ?game { ${qids.map((qid) => `wd:${qid}`).join(" ")} }
+  ?game p:P577/psv:P577 [ wikibase:timeValue ?date ; wikibase:timePrecision ?precision ] .
+}`;
+
+const gamesPerReleaseQuery = 2000;
+
 export const entityQid = (uri: string) => uri.slice(uri.lastIndexOf("/") + 1);
 
 export class WikidataError extends Schema.TaggedError<WikidataError>()(
@@ -100,6 +123,9 @@ export class Wikidata extends Context.Service<
     places(
       qids: ReadonlyArray<string>,
     ): Effect.Effect<ReadonlyArray<PlaceRow>, WikidataError>;
+    releaseDates(
+      gameQids: ReadonlyArray<string>,
+    ): Effect.Effect<ReadonlyArray<ReleaseDateRow>, WikidataError>;
   }
 >()("rag-ai-chat/corpus/Wikidata") {
   static readonly layer = Layer.effect(
@@ -158,7 +184,28 @@ export class Wikidata extends Context.Service<
         }));
       });
 
-      return Wikidata.of({ videoGameOrigins, places });
+      const releaseDatesInBatch = (qids: ReadonlyArray<string>) =>
+        select(releaseDatesQuery(qids), ReleaseDateResults).pipe(
+          Effect.map(({ results }) =>
+            results.bindings.map((row) => ({
+              gameQid: entityQid(row.game.value),
+              date: row.date.value,
+              precision: Number(row.precision.value),
+            })),
+          ),
+        );
+
+      const releaseDates = Effect.fn("Wikidata.releaseDates")(function* (
+        gameQids: ReadonlyArray<string>,
+      ) {
+        const batches = yield* Effect.forEach(
+          Arr.chunksOf(gameQids, gamesPerReleaseQuery),
+          releaseDatesInBatch,
+        );
+        return batches.flat();
+      });
+
+      return Wikidata.of({ videoGameOrigins, places, releaseDates });
     }),
   ).pipe(Layer.provide(FetchHttpClient.layer));
 }

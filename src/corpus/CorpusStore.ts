@@ -2,6 +2,7 @@ import { Array as Arr, Context, Effect, Layer, Schema } from "effect";
 import { SqlClient, SqlSchema } from "effect/sql";
 import type { CatalogGame } from "./Catalog";
 import type { Chunk } from "./Chunker";
+import type { Release } from "./ReleaseDate";
 import type { StructuredArticle } from "./StructuredWikipedia";
 
 export interface IngestedArticle {
@@ -78,6 +79,23 @@ export const migrations = {
       )
     `;
   }),
+  "0002_release_dates": Effect.gen(function* () {
+    const sql = yield* SqlClient.SqlClient;
+    yield* sql`ALTER TABLE games ADD COLUMN released TEXT`;
+    yield* sql`ALTER TABLE games ADD COLUMN release_year INTEGER`;
+    yield* sql`CREATE INDEX games_by_release ON games (released)`;
+  }),
+  "0003_passage_search": Effect.gen(function* () {
+    const sql = yield* SqlClient.SqlClient;
+    yield* sql`
+      CREATE VIRTUAL TABLE passages_fts USING fts5(
+        heading,
+        text,
+        content = 'passages',
+        tokenize = 'porter unicode61 remove_diacritics 2'
+      )
+    `;
+  }),
 };
 
 const rowsPerStatement = 500;
@@ -128,6 +146,8 @@ export class CorpusStore extends Context.Service<
   CorpusStore,
   {
     saveCatalog(games: ReadonlyArray<CatalogGame>): Effect.Effect<void>;
+    saveReleases(releases: ReadonlyArray<Release>): Effect.Effect<void>;
+    readonly rebuildSearchIndex: Effect.Effect<void>;
     readonly ingestedShards: Effect.Effect<ReadonlySet<string>>;
     readonly gameTitles: Effect.Effect<ReadonlyArray<GameTitle>>;
     passagesOf(
@@ -186,6 +206,29 @@ export class CorpusStore extends Context.Service<
         },
         sql.withTransaction,
         Effect.orDie,
+      );
+
+      const saveReleases = Effect.fn("CorpusStore.saveReleases")(
+        function* (releases: ReadonlyArray<Release>) {
+          yield* sql`UPDATE games SET released = NULL, release_year = NULL`;
+          for (const release of releases) {
+            yield* sql`
+              UPDATE games
+              SET released = ${release.released}, release_year = ${release.year}
+              WHERE qid = ${release.gameQid}
+            `;
+          }
+        },
+        sql.withTransaction,
+        Effect.orDie,
+      );
+
+      const rebuildSearchIndex = sql`
+        INSERT INTO passages_fts (passages_fts) VALUES ('rebuild')
+      `.pipe(
+        Effect.asVoid,
+        Effect.orDie,
+        Effect.withSpan("CorpusStore.rebuildSearchIndex"),
       );
 
       const ingestedShards = SqlSchema.findAll({
@@ -327,6 +370,8 @@ export class CorpusStore extends Context.Service<
 
       return CorpusStore.of({
         saveCatalog,
+        saveReleases,
+        rebuildSearchIndex,
         ingestedShards,
         saveShard,
         stats,
