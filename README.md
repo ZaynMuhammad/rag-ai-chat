@@ -58,7 +58,7 @@ question + scope (region, years, or one game)
 - **Retrieval** is BM25 in SQLite FTS5 (porter stemming, diacritics folded), filtered by the same scope as browsing. It reads the corpus through `node:sqlite`, so there is no native addon. [`Retriever.ts`](src/server/search/Retriever.ts)
 - **Grounded chat** sends the retrieved passages first, then streams the answer. When nothing in scope matches, it says so without calling a model. [`GroundedChat.ts`](src/server/chat/GroundedChat.ts)
 - **Failover.** Providers form an Effect `ExecutionPlan`. A provider that fails, or sends no token within `FIRST_TOKEN_TIMEOUT` (2 s), hands over to the next; once tokens have streamed, a failure is reported rather than restarted. A per-provider circuit breaker opens after 5 consecutive failures or half the calls in 30 s, and requests then skip that provider without calling it. After 10 s one probe goes through, and a success closes it. The last provider in the plan is never cut off, since nothing is left to fail over to. State is in memory, per process, and labeled only by provider. [`CircuitBreaker.ts`](src/server/provider/CircuitBreaker.ts)
-- **Providers.** With no `ANTHROPIC_API_KEY`, the only provider is `mock-extractive`, which quotes the best-matching retrieved sentences with citations. Dev, tests, and load tests never spend money. With a key, Claude Haiku 5.5 answers at low effort, and the mock is the fallback.
+- **Providers.** With no keys, the only provider is `mock-extractive`, which quotes the best-matching retrieved sentences with citations. Dev, tests, and load tests never spend money. With `ANTHROPIC_API_KEY`, Claude Haiku 5.5 answers at low effort. With `OPENAI_MODEL`, any OpenAI-compatible endpoint joins the plan: OpenAI, Groq, Together, or a local Ollama. The mock is always the last fallback. `GET /api/models` lists the configured models in fallback order, and a chat may pick one with `model`: it goes first, and the rest stay as fallback. [`ChatModels.ts`](src/server/provider/ChatModels.ts)
 
 ## Privacy
 
@@ -77,15 +77,18 @@ bun run corpus:build         # about 20 minutes and 37 GB streamed; keeps a 300 
 bun run dev                  # http://localhost:3000
 ```
 
-| Environment variable          | Default                    | Effect                                                                                    |
-| ----------------------------- | -------------------------- | ----------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`           | unset                      | Unset: the free extractive mock answers. Set: Claude answers.                             |
-| `ANTHROPIC_MODEL`             | `claude-haiku-5-5`         | Model used when a key is set                                                              |
-| `FIRST_TOKEN_TIMEOUT`         | `2 seconds`                | How long a provider may take to send its first token before the next one takes over       |
-| `MOCK_PRIMARY`                | unset                      | e.g. `ok@15,hang@15,outage@15,ok`: a scheduled mock ahead of the others, for load tests   |
-| `RETRIEVAL_COMMON_WORD_SHARE` | unset                      | e.g. `0.1`: every match needs a word found in under 10% of passages (faster, see Numbers) |
-| `SESSION_SECRET`              | random per process         | HMAC key for session tokens; set it when running more than one process                    |
-| `CORPUS_DATABASE`             | `data/corpus/games.sqlite` | Corpus location                                                                           |
+| Environment variable          | Default                     | Effect                                                                                    |
+| ----------------------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`           | unset                       | Unset: the free extractive mock answers. Set: Claude answers.                             |
+| `ANTHROPIC_MODEL`             | `claude-haiku-5-5`          | Model used when a key is set                                                              |
+| `OPENAI_MODEL`                | unset                       | Set: an OpenAI-compatible model joins the plan, e.g. `gpt-5-mini` or `llama3.2:3b`        |
+| `OPENAI_BASE_URL`             | `https://api.openai.com/v1` | e.g. `https://api.groq.com/openai/v1` or `http://localhost:11434/v1` for Ollama           |
+| `OPENAI_API_KEY`              | unset                       | Bearer key for that endpoint; Ollama needs none                                           |
+| `FIRST_TOKEN_TIMEOUT`         | `2 seconds`                 | How long a provider may take to send its first token before the next one takes over       |
+| `MOCK_PRIMARY`                | unset                       | e.g. `ok@15,hang@15,outage@15,ok`: a scheduled mock ahead of the others, for load tests   |
+| `RETRIEVAL_COMMON_WORD_SHARE` | unset                       | e.g. `0.1`: every match needs a word found in under 10% of passages (faster, see Numbers) |
+| `SESSION_SECRET`              | random per process          | HMAC key for session tokens; set it when running more than one process                    |
+| `CORPUS_DATABASE`             | `data/corpus/games.sqlite`  | Corpus location                                                                           |
 
 ## Evals and load
 
