@@ -5,6 +5,7 @@ import { AnonymousSessions } from "@/server/gateway/AnonymousSessions";
 import { GameCatalog } from "@/server/games/GameCatalog";
 import { chatPlan } from "@/server/provider/ChatModels";
 import { Retriever } from "@/server/search/Retriever";
+import { SearchResults } from "@/server/search/SearchResults";
 
 const Chat = Layer.unwrap(Effect.map(chatPlan, GroundedChat.layer));
 
@@ -12,6 +13,7 @@ const AppLayer = Layer.mergeAll(
   GameCatalog.layer,
   Chat,
   AnonymousSessions.layer,
+  SearchResults.layer,
 ).pipe(
   Layer.provideMerge(Retriever.layer),
   Layer.provide(CorpusDatabase),
