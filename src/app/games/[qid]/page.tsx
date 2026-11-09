@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { formatReleased } from "@/lib/release";
-import { type GameDetail, GameCatalog } from "@/server/games/GameCatalog";
+import { GameCatalog } from "@/server/games/GameCatalog";
+import type { GameDetail } from "@/server/games/GameProtocol";
 import { runAtRequestTime } from "@/app/run";
 
 const sectionName = (game: GameDetail, heading: string) =>

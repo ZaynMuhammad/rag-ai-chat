@@ -1,5 +1,16 @@
 import { Context, Effect, Layer, Option, Schema } from "effect";
 import { SqlClient, SqlSchema } from "effect/sql";
+import {
+  ArticlePassage,
+  type GameDetail,
+  GameRow,
+  Origin,
+  Pin,
+  PlaceGame,
+  PlaceGamesQuery,
+  type PlaceGamesPage,
+  Studio,
+} from "./GameProtocol";
 import { Qid, Scope, scopeConditions } from "./Scope";
 
 export const SortOrder = Schema.Literals(["newest", "oldest", "title"]);
@@ -32,33 +43,6 @@ export const SubRegionCount = Schema.Struct({
 });
 export type SubRegionCount = typeof SubRegionCount.Type;
 
-export const Origin = Schema.Struct({
-  placeLabel: Schema.String,
-  country: Schema.String,
-  region: Schema.String,
-  subRegion: Schema.String,
-});
-
-export const ArticlePassage = Schema.Struct({
-  id: Schema.String,
-  heading: Schema.String,
-  text: Schema.String,
-});
-
-const GameRow = Schema.Struct({
-  qid: Schema.String,
-  title: Schema.String,
-  released: Schema.NullOr(Schema.String),
-  description: Schema.NullOr(Schema.String),
-  url: Schema.NullOr(Schema.String),
-  revisionId: Schema.NullOr(Schema.Number),
-});
-
-export interface GameDetail extends Schema.Schema.Type<typeof GameRow> {
-  readonly origins: ReadonlyArray<typeof Origin.Type>;
-  readonly passages: ReadonlyArray<typeof ArticlePassage.Type>;
-}
-
 export interface BrowsePage {
   readonly games: ReadonlyArray<GameSummary>;
   readonly total: number;
@@ -66,12 +50,18 @@ export interface BrowsePage {
   readonly pageCount: number;
 }
 
+const PlaceGameRow = Schema.Struct({
+  ...PlaceGame.fields,
+  genres: StringList,
+});
+
 export class GameNotFound extends Schema.TaggedError<GameNotFound>()(
   "GameNotFound",
   { qid: Schema.String },
 ) {}
 
 export const pageSize = 24;
+export const placePageSize = 50;
 
 const isQid = Schema.is(Qid);
 
@@ -80,6 +70,8 @@ export class GameCatalog extends Context.Service<
   {
     browse(query: BrowseQuery): Effect.Effect<BrowsePage>;
     readonly subRegions: Effect.Effect<ReadonlyArray<SubRegionCount>>;
+    readonly pins: Effect.Effect<ReadonlyArray<Pin>>;
+    placeGames(query: PlaceGamesQuery): Effect.Effect<PlaceGamesPage>;
     game(qid: string): Effect.Effect<GameDetail, GameNotFound>;
   }
 >()("rag-ai-chat/games/GameCatalog") {
@@ -89,6 +81,8 @@ export class GameCatalog extends Context.Service<
       const sql = yield* SqlClient.SqlClient;
 
       const hasText = sql`EXISTS (SELECT 1 FROM passages WHERE passages.game_qid = games.qid)`;
+
+      const pinHasText = sql`pins.game_qid IN (SELECT game_qid FROM passages)`;
 
       const browseConditions = (query: BrowseQuery) =>
         sql.and([
@@ -162,6 +156,66 @@ export class GameCatalog extends Context.Service<
         Effect.cached,
       );
 
+      const pins = yield* SqlSchema.findAll({
+        Request: Schema.Void,
+        Result: Pin,
+        execute: () => sql`
+          SELECT
+            place_qid AS placeQid, place_label AS label, kind, latitude, longitude,
+            COUNT(DISTINCT game_qid) AS games
+          FROM pins
+          WHERE ${pinHasText}
+          GROUP BY place_qid, kind
+          ORDER BY games DESC, placeQid
+        `,
+      })(undefined).pipe(
+        Effect.orDie,
+        Effect.withSpan("GameCatalog.pins"),
+        Effect.cached,
+      );
+
+      const findPlaceGames = SqlSchema.findAll({
+        Request: PlaceGamesQuery,
+        Result: PlaceGameRow,
+        execute: (query) => sql`
+          SELECT
+            games.qid, games.title, games.released,
+            (SELECT json_group_array(label) FROM (
+              SELECT label FROM genres WHERE genres.game_qid = games.qid ORDER BY label
+            )) AS genres
+          FROM games
+          WHERE games.qid IN (
+            SELECT game_qid FROM pins WHERE place_qid = ${query.placeQid} AND ${pinHasText}
+          )
+          ORDER BY ${orderBy("newest")}
+          LIMIT ${placePageSize} OFFSET ${(query.page - 1) * placePageSize}
+        `,
+      });
+
+      const countPlaceGames = SqlSchema.findOne({
+        Request: Qid,
+        Result: Schema.Struct({ total: Schema.Number }),
+        execute: (placeQid) => sql`
+          SELECT COUNT(DISTINCT game_qid) AS total FROM pins
+          WHERE place_qid = ${placeQid} AND ${pinHasText}
+        `,
+      });
+
+      const placeGames = Effect.fn("GameCatalog.placeGames")(function* (
+        query: PlaceGamesQuery,
+      ) {
+        const [games, { total }] = yield* Effect.all([
+          findPlaceGames(query),
+          countPlaceGames(query.placeQid),
+        ]);
+        return {
+          games,
+          total,
+          page: query.page,
+          pageCount: Math.max(1, Math.ceil(total / placePageSize)),
+        };
+      }, Effect.orDie);
+
       const findGame = SqlSchema.findOneOption({
         Request: Qid,
         Result: GameRow,
@@ -180,6 +234,23 @@ export class GameCatalog extends Context.Service<
         `,
       });
 
+      const findStudios = SqlSchema.findAll({
+        Request: Qid,
+        Result: Studio,
+        execute: (qid) => sql`
+          SELECT developer_label AS developer, place_label AS place
+          FROM studios WHERE game_qid = ${qid} ORDER BY developer_label
+        `,
+      });
+
+      const findGenres = SqlSchema.findAll({
+        Request: Qid,
+        Result: Schema.Struct({ label: Schema.String }),
+        execute: (qid) => sql`
+          SELECT label FROM genres WHERE game_qid = ${qid} ORDER BY label
+        `,
+      });
+
       const findPassages = SqlSchema.findAll({
         Request: Qid,
         Result: ArticlePassage,
@@ -193,14 +264,22 @@ export class GameCatalog extends Context.Service<
         if (!isQid(qid)) return yield* notFound;
         const row = yield* findGame(qid).pipe(Effect.orDie);
         if (Option.isNone(row)) return yield* notFound;
-        const [origins, passages] = yield* Effect.all([
+        const [origins, studios, genres, passages] = yield* Effect.all([
           findOrigins(qid),
+          findStudios(qid),
+          findGenres(qid),
           findPassages(qid),
         ]).pipe(Effect.orDie);
-        return { ...row.value, origins, passages };
+        return {
+          ...row.value,
+          origins,
+          studios,
+          genres: genres.map((genre) => genre.label),
+          passages,
+        };
       });
 
-      return GameCatalog.of({ browse, subRegions, game });
+      return GameCatalog.of({ browse, subRegions, pins, placeGames, game });
     }),
   );
 }
