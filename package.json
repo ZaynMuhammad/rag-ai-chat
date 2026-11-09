@@ -21,10 +21,12 @@
     "evals:check": "bun scripts/evals/check-eval-set.ts",
     "evals:retrieval": "bun scripts/evals/run-retrieval.ts",
     "evals:answers": "bun scripts/evals/run-answers.ts",
+    "evals:assist-gate": "bun scripts/evals/run-assist-gate.ts",
     "load:steady": "bun scripts/load/steady-chat.ts",
     "load:outage": "bun scripts/load/outage-chat.ts",
     "load:spike": "bun scripts/load/spike-chat.ts",
     "load:zipf": "bun scripts/load/zipf-chat.ts",
+    "load:search": "bun scripts/load/search-latency.ts",
     "bench:pro": "bun build scripts/pro/bench-signing.ts --target=node --outfile=.next/bench-signing.mjs && node .next/bench-signing.mjs"
   },
   "dependencies": {
