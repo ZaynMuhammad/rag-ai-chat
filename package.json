@@ -20,6 +20,7 @@
     "evals:build": "bun scripts/evals/build-eval-set.ts",
     "evals:check": "bun scripts/evals/check-eval-set.ts",
     "evals:retrieval": "bun scripts/evals/run-retrieval.ts",
+    "evals:answers": "bun scripts/evals/run-answers.ts",
     "load:steady": "bun scripts/load/steady-chat.ts"
   },
   "dependencies": {

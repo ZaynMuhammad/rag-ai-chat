@@ -28,6 +28,19 @@ Measured on a 2-core VPS. Reproduce with the commands in [Evals and load](#evals
 | MRR                                                                    | 0.510               | 0.498                      |
 | Retrieval p50 / p99                                                    | 207 / 412 ms        | 109 / 410 ms               |
 
+| Answer eval: 180 frozen questions through Retriever + `GroundedChat`, `mock-extractive` | all       | HotpotQA  | KILT NQ   | hand-written |
+| --------------------------------------------------------------------------------------- | --------- | --------- | --------- | ------------ |
+| A gold passage is among the 6 sent                                                      | 0.681     | 0.836     | 0.507     | 0.833        |
+| Answer contains a gold answer                                                           | 0.356     | 0.400     | 0.240     | 0.567        |
+| Answer token F1                                                                         | 0.027     | 0.024     | 0.020     | 0.048        |
+| Citation precision (cited passages holding gold evidence)                               | 0.308     | 0.345     | 0.200     | 0.506        |
+| Citation recall (gold articles cited)                                                   | 0.694     | 0.527     | 0.727     | 0.917        |
+| Citation validity / uncited sentences / lexical faithfulness                            | 1 / 0 / 1 | 1 / 0 / 1 | 1 / 0 / 1 | 1 / 0 / 1    |
+| Says "not covered" on the 20 unanswerable questions                                     | 0.200     |           |           | 0.200        |
+| Says "not covered" on an answerable question                                            | 0.006     | 0         | 0.013     | 0            |
+
+The extractive mock quotes retrieved sentences verbatim and cites each one, so citation validity, uncited sentences, and lexical faithfulness sit at their ceilings by construction. They are there to catch a real model. Token F1 is low because the mock answers with whole sentences, not short spans. `EVAL_JUDGE=anthropic` adds a claim-by-claim LLM judge for faithfulness. [`AnswerMetrics.ts`](src/evals/AnswerMetrics.ts), [`FaithfulnessJudge.ts`](src/evals/FaithfulnessJudge.ts)
+
 | Load: 4 chats/s for 60 s, production build, mock provider | full BM25              | require a distinctive word |
 | --------------------------------------------------------- | ---------------------- | -------------------------- |
 | Errors                                                    | 0                      | 0                          |
@@ -82,6 +95,9 @@ bun run dev                  # http://localhost:3000
 ```sh
 bun run evals:check          # every frozen question still resolves to passages in the corpus
 bun run evals:retrieval      # hit@k, article recall, MRR, latency; writes evals/games/results/retrieval.json
+bun run evals:answers        # answer, citation, faithfulness and abstention metrics; writes evals/games/results/answers.json
+bun run evals:answers --check  # fails if any metric drops more than 0.02 in a group of 20+ questions
+EVAL_PROVIDER=anthropic EVAL_LIMIT=30 bun run evals:answers --estimate  # cost ceiling for a real-model run, no calls made
 bun run build && bun run start &
 LOAD_BASE_URL=http://localhost:3000 LOAD_RPS=4 LOAD_SECONDS=60 bun run load:steady
 ```
