@@ -2,9 +2,9 @@ import Link from "next/link";
 import { formatReleased } from "@/lib/release";
 import type { SearchHit } from "@/server/search/SearchProtocol";
 
-const sectionName = (hit: SearchHit) =>
-  hit.heading.startsWith(`${hit.title} > `)
-    ? hit.heading.slice(hit.title.length + 3)
+export const sectionName = (title: string, heading: string) =>
+  heading.startsWith(`${title} > `)
+    ? heading.slice(title.length + 3)
     : "Overview";
 
 export const passageHref = (gameQid: string, passageId: string) =>
@@ -52,7 +52,8 @@ export function SearchResultList({
             {hit.title}
           </Link>
           <p className="text-xs text-muted-foreground">
-            {formatReleased(hit.released)} · {sectionName(hit)}
+            {formatReleased(hit.released)} ·{" "}
+            {sectionName(hit.title, hit.heading)}
           </p>
           <Snippet hit={hit} />
           {hit.revisionId !== null && (

@@ -6,7 +6,7 @@ import { answerSegments } from "@/lib/citations";
 import { fetchWithSession } from "@/lib/session";
 import { readSse } from "@/server/chat/sse";
 import type { RetrievedPassage } from "@/server/search/Passage";
-import { passageHref } from "./SearchResultList";
+import { passageHref, sectionName } from "./SearchResultList";
 
 interface Assist {
   readonly text: string;
@@ -149,7 +149,7 @@ export function AssistAnswer({
                 href={passageHref(passage.gameQid, passage.id)}
                 className="min-w-0 truncate hover:underline"
               >
-                {passage.title} · {passage.heading}
+                {passage.title} · {sectionName(passage.title, passage.heading)}
               </Link>
             </li>
           ))}
