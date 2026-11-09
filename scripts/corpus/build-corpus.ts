@@ -4,6 +4,7 @@ import { articleBlocks } from "../../src/corpus/ArticleBlocks";
 import { buildCatalog } from "../../src/corpus/Catalog";
 import { chunkArticle } from "../../src/corpus/Chunker";
 import { earliestReleases } from "../../src/corpus/ReleaseDate";
+import { distinctGenres, studioLocations } from "../../src/corpus/Studios";
 import { commonTerms, countDocuments } from "../../src/corpus/Terms";
 import { CorpusStore } from "../../src/corpus/CorpusStore";
 import {
@@ -99,6 +100,18 @@ const program = Effect.gen(function* () {
   yield* store.saveReleases(releases);
   yield* Effect.logInfo(
     `Wikidata: ${releases.length}/${qids.size} games have a release date`,
+  );
+
+  const studios = studioLocations(yield* (yield* Wikidata).studios([...qids]));
+  yield* store.saveStudios(studios);
+  yield* Effect.logInfo(
+    `Wikidata: ${new Set(studios.map((studio) => studio.gameQid)).size}/${qids.size} games have a studio city`,
+  );
+
+  const genres = distinctGenres(yield* (yield* Wikidata).genres([...qids]));
+  yield* store.saveGenres(genres);
+  yield* Effect.logInfo(
+    `Wikidata: ${new Set(genres.map((genre) => genre.gameQid)).size}/${qids.size} games have a genre`,
   );
 
   const done = yield* store.ingestedShards;
