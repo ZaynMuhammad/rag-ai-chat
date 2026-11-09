@@ -1,0 +1,36 @@
+{
+  "corpus": {
+    "dataset": "wikimedia/structured-wikipedia",
+    "revision": "417c267bb457fa645c22eb3b5c77764963194c70",
+    "games": 26933,
+    "gamesWithText": 24887,
+    "passages": 162346
+  },
+  "sources": {
+    "hotpotqa": {
+      "dataset": "hotpotqa/hotpot_qa",
+      "revision": "1908d6afbbead072334abe2965f91bd2709910ab",
+      "license": "CC BY-SA 4.0",
+      "files": [
+        "distractor/train-00000-of-00002.parquet",
+        "distractor/train-00001-of-00002.parquet",
+        "distractor/validation-00000-of-00001.parquet"
+      ],
+      "candidates": 65,
+      "resolved": 55
+    },
+    "kilt_nq": {
+      "dataset": "facebook/kilt_tasks",
+      "revision": "0f7881c6bf693742af91a31b4d8f827db2f41233",
+      "license": "KILT code MIT; Natural Questions data CC BY-SA 3.0",
+      "files": [
+        "nq/train-00000-of-00001.parquet",
+        "nq/validation-00000-of-00001.parquet"
+      ],
+      "candidates": 399,
+      "resolved": 336
+    }
+  },
+  "questionsPerSource": 75,
+  "benchmarkQuestions": 130
+}

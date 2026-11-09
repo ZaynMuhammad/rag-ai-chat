@@ -1,0 +1,1738 @@
+[
+  {
+    "iso2": "AD",
+    "country": "Andorra",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "AE",
+    "country": "United Arab Emirates",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "AF",
+    "country": "Afghanistan",
+    "region": "Asia",
+    "subRegion": "Southern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "AG",
+    "country": "Antigua and Barbuda",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "AI",
+    "country": "Anguilla",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "AL",
+    "country": "Albania",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "AM",
+    "country": "Armenia",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "AO",
+    "country": "Angola",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Middle Africa"
+  },
+  {
+    "iso2": "AQ",
+    "country": "Antarctica",
+    "region": "",
+    "subRegion": "",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "AR",
+    "country": "Argentina",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "AS",
+    "country": "American Samoa",
+    "region": "Oceania",
+    "subRegion": "Polynesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "AT",
+    "country": "Austria",
+    "region": "Europe",
+    "subRegion": "Western Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "AU",
+    "country": "Australia",
+    "region": "Oceania",
+    "subRegion": "Australia and New Zealand",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "AW",
+    "country": "Aruba",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "AX",
+    "country": "&#197;land Islands",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "AZ",
+    "country": "Azerbaijan",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "BA",
+    "country": "Bosnia and Herzegovina",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "BB",
+    "country": "Barbados",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "BD",
+    "country": "Bangladesh",
+    "region": "Asia",
+    "subRegion": "Southern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "BE",
+    "country": "Belgium",
+    "region": "Europe",
+    "subRegion": "Western Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "BF",
+    "country": "Burkina Faso",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "BG",
+    "country": "Bulgaria",
+    "region": "Europe",
+    "subRegion": "Eastern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "BH",
+    "country": "Bahrain",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "BI",
+    "country": "Burundi",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "BJ",
+    "country": "Benin",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "BL",
+    "country": "Saint Barth&#233;lemy",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "BM",
+    "country": "Bermuda",
+    "region": "Americas",
+    "subRegion": "Northern America",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "BN",
+    "country": "Brunei Darussalam",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "BO",
+    "country": "Bolivia (Plurinational State of)",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "BQ",
+    "country": "Bonaire, Sint Eustatius and Saba",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "BR",
+    "country": "Brazil",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "BS",
+    "country": "Bahamas",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "BT",
+    "country": "Bhutan",
+    "region": "Asia",
+    "subRegion": "Southern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "BV",
+    "country": "Bouvet Island",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "BW",
+    "country": "Botswana",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Southern Africa"
+  },
+  {
+    "iso2": "BY",
+    "country": "Belarus",
+    "region": "Europe",
+    "subRegion": "Eastern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "BZ",
+    "country": "Belize",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Central America"
+  },
+  {
+    "iso2": "CA",
+    "country": "Canada",
+    "region": "Americas",
+    "subRegion": "Northern America",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "CC",
+    "country": "Cocos (Keeling) Islands",
+    "region": "Oceania",
+    "subRegion": "Australia and New Zealand",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "CD",
+    "country": "Democratic Republic of the Congo",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Middle Africa"
+  },
+  {
+    "iso2": "CF",
+    "country": "Central African Republic",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Middle Africa"
+  },
+  {
+    "iso2": "CG",
+    "country": "Congo",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Middle Africa"
+  },
+  {
+    "iso2": "CH",
+    "country": "Switzerland",
+    "region": "Europe",
+    "subRegion": "Western Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "CI",
+    "country": "C&#244;te d’Ivoire",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "CK",
+    "country": "Cook Islands",
+    "region": "Oceania",
+    "subRegion": "Polynesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "CL",
+    "country": "Chile",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "CM",
+    "country": "Cameroon",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Middle Africa"
+  },
+  {
+    "iso2": "CN",
+    "country": "China",
+    "region": "Asia",
+    "subRegion": "Eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "CO",
+    "country": "Colombia",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "CR",
+    "country": "Costa Rica",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Central America"
+  },
+  {
+    "iso2": "CU",
+    "country": "Cuba",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "CV",
+    "country": "Cabo Verde",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "CW",
+    "country": "Cura&#231;ao",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "CX",
+    "country": "Christmas Island",
+    "region": "Oceania",
+    "subRegion": "Australia and New Zealand",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "CY",
+    "country": "Cyprus",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "CZ",
+    "country": "Czechia",
+    "region": "Europe",
+    "subRegion": "Eastern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "DE",
+    "country": "Germany",
+    "region": "Europe",
+    "subRegion": "Western Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "DJ",
+    "country": "Djibouti",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "DK",
+    "country": "Denmark",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "DM",
+    "country": "Dominica",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "DO",
+    "country": "Dominican Republic",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "DZ",
+    "country": "Algeria",
+    "region": "Africa",
+    "subRegion": "Northern Africa",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "EC",
+    "country": "Ecuador",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "EE",
+    "country": "Estonia",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "EG",
+    "country": "Egypt",
+    "region": "Africa",
+    "subRegion": "Northern Africa",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "EH",
+    "country": "Western Sahara",
+    "region": "Africa",
+    "subRegion": "Northern Africa",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "ER",
+    "country": "Eritrea",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "ES",
+    "country": "Spain",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "ET",
+    "country": "Ethiopia",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "FI",
+    "country": "Finland",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "FJ",
+    "country": "Fiji",
+    "region": "Oceania",
+    "subRegion": "Melanesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "FK",
+    "country": "Falkland Islands (Malvinas)",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "FM",
+    "country": "Micronesia (Federated States of)",
+    "region": "Oceania",
+    "subRegion": "Micronesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "FO",
+    "country": "Faroe Islands",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "FR",
+    "country": "France",
+    "region": "Europe",
+    "subRegion": "Western Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "GA",
+    "country": "Gabon",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Middle Africa"
+  },
+  {
+    "iso2": "GB",
+    "country": "United Kingdom of Great Britain and Northern Ireland",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "GD",
+    "country": "Grenada",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "GE",
+    "country": "Georgia",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "GF",
+    "country": "French Guiana",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "GG",
+    "country": "Guernsey",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "GH",
+    "country": "Ghana",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "GI",
+    "country": "Gibraltar",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "GL",
+    "country": "Greenland",
+    "region": "Americas",
+    "subRegion": "Northern America",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "GM",
+    "country": "Gambia",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "GN",
+    "country": "Guinea",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "GP",
+    "country": "Guadeloupe",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "GQ",
+    "country": "Equatorial Guinea",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Middle Africa"
+  },
+  {
+    "iso2": "GR",
+    "country": "Greece",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "GS",
+    "country": "South Georgia and the South Sandwich Islands",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "GT",
+    "country": "Guatemala",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Central America"
+  },
+  {
+    "iso2": "GU",
+    "country": "Guam",
+    "region": "Oceania",
+    "subRegion": "Micronesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "GW",
+    "country": "Guinea-Bissau",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "GY",
+    "country": "Guyana",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "HK",
+    "country": "China, Hong Kong Special Administrative Region",
+    "region": "Asia",
+    "subRegion": "Eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "HM",
+    "country": "Heard Island and McDonald Islands",
+    "region": "Oceania",
+    "subRegion": "Australia and New Zealand",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "HN",
+    "country": "Honduras",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Central America"
+  },
+  {
+    "iso2": "HR",
+    "country": "Croatia",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "HT",
+    "country": "Haiti",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "HU",
+    "country": "Hungary",
+    "region": "Europe",
+    "subRegion": "Eastern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "ID",
+    "country": "Indonesia",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "IE",
+    "country": "Ireland",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "IL",
+    "country": "Israel",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "IM",
+    "country": "Isle of Man",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "IN",
+    "country": "India",
+    "region": "Asia",
+    "subRegion": "Southern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "IO",
+    "country": "British Indian Ocean Territory",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "IQ",
+    "country": "Iraq",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "IR",
+    "country": "Iran (Islamic Republic of)",
+    "region": "Asia",
+    "subRegion": "Southern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "IS",
+    "country": "Iceland",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "IT",
+    "country": "Italy",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "JE",
+    "country": "Jersey",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "JM",
+    "country": "Jamaica",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "JO",
+    "country": "Jordan",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "JP",
+    "country": "Japan",
+    "region": "Asia",
+    "subRegion": "Eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "KE",
+    "country": "Kenya",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "KG",
+    "country": "Kyrgyzstan",
+    "region": "Asia",
+    "subRegion": "Central Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "KH",
+    "country": "Cambodia",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "KI",
+    "country": "Kiribati",
+    "region": "Oceania",
+    "subRegion": "Micronesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "KM",
+    "country": "Comoros",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "KN",
+    "country": "Saint Kitts and Nevis",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "KP",
+    "country": "Democratic People's Republic of Korea",
+    "region": "Asia",
+    "subRegion": "Eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "KR",
+    "country": "Republic of Korea",
+    "region": "Asia",
+    "subRegion": "Eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "KW",
+    "country": "Kuwait",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "KY",
+    "country": "Cayman Islands",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "KZ",
+    "country": "Kazakhstan",
+    "region": "Asia",
+    "subRegion": "Central Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "LA",
+    "country": "Lao People's Democratic Republic",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "LB",
+    "country": "Lebanon",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "LC",
+    "country": "Saint Lucia",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "LI",
+    "country": "Liechtenstein",
+    "region": "Europe",
+    "subRegion": "Western Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "LK",
+    "country": "Sri Lanka",
+    "region": "Asia",
+    "subRegion": "Southern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "LR",
+    "country": "Liberia",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "LS",
+    "country": "Lesotho",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Southern Africa"
+  },
+  {
+    "iso2": "LT",
+    "country": "Lithuania",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "LU",
+    "country": "Luxembourg",
+    "region": "Europe",
+    "subRegion": "Western Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "LV",
+    "country": "Latvia",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "LY",
+    "country": "Libya",
+    "region": "Africa",
+    "subRegion": "Northern Africa",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MA",
+    "country": "Morocco",
+    "region": "Africa",
+    "subRegion": "Northern Africa",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MC",
+    "country": "Monaco",
+    "region": "Europe",
+    "subRegion": "Western Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MD",
+    "country": "Republic of Moldova",
+    "region": "Europe",
+    "subRegion": "Eastern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "ME",
+    "country": "Montenegro",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MF",
+    "country": "Saint Martin (French Part)",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "MG",
+    "country": "Madagascar",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "MH",
+    "country": "Marshall Islands",
+    "region": "Oceania",
+    "subRegion": "Micronesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MK",
+    "country": "North Macedonia",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "ML",
+    "country": "Mali",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "MM",
+    "country": "Myanmar",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MN",
+    "country": "Mongolia",
+    "region": "Asia",
+    "subRegion": "Eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MO",
+    "country": "China, Macao Special Administrative Region",
+    "region": "Asia",
+    "subRegion": "Eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MP",
+    "country": "Northern Mariana Islands",
+    "region": "Oceania",
+    "subRegion": "Micronesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MQ",
+    "country": "Martinique",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "MR",
+    "country": "Mauritania",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "MS",
+    "country": "Montserrat",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "MT",
+    "country": "Malta",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MU",
+    "country": "Mauritius",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "MV",
+    "country": "Maldives",
+    "region": "Asia",
+    "subRegion": "Southern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MW",
+    "country": "Malawi",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "MX",
+    "country": "Mexico",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Central America"
+  },
+  {
+    "iso2": "MY",
+    "country": "Malaysia",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "MZ",
+    "country": "Mozambique",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "NA",
+    "country": "Namibia",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Southern Africa"
+  },
+  {
+    "iso2": "NC",
+    "country": "New Caledonia",
+    "region": "Oceania",
+    "subRegion": "Melanesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "NE",
+    "country": "Niger",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "NF",
+    "country": "Norfolk Island",
+    "region": "Oceania",
+    "subRegion": "Australia and New Zealand",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "NG",
+    "country": "Nigeria",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "NI",
+    "country": "Nicaragua",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Central America"
+  },
+  {
+    "iso2": "NL",
+    "country": "Netherlands (Kingdom of the)",
+    "region": "Europe",
+    "subRegion": "Western Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "NO",
+    "country": "Norway",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "NP",
+    "country": "Nepal",
+    "region": "Asia",
+    "subRegion": "Southern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "NR",
+    "country": "Naoero",
+    "region": "Oceania",
+    "subRegion": "Micronesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "NU",
+    "country": "Niue",
+    "region": "Oceania",
+    "subRegion": "Polynesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "NZ",
+    "country": "New Zealand",
+    "region": "Oceania",
+    "subRegion": "Australia and New Zealand",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "OM",
+    "country": "Oman",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PA",
+    "country": "Panama",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Central America"
+  },
+  {
+    "iso2": "PE",
+    "country": "Peru",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "PF",
+    "country": "French Polynesia",
+    "region": "Oceania",
+    "subRegion": "Polynesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PG",
+    "country": "Papua New Guinea",
+    "region": "Oceania",
+    "subRegion": "Melanesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PH",
+    "country": "Philippines",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PK",
+    "country": "Pakistan",
+    "region": "Asia",
+    "subRegion": "Southern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PL",
+    "country": "Poland",
+    "region": "Europe",
+    "subRegion": "Eastern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PM",
+    "country": "Saint Pierre and Miquelon",
+    "region": "Americas",
+    "subRegion": "Northern America",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PN",
+    "country": "Pitcairn",
+    "region": "Oceania",
+    "subRegion": "Polynesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PR",
+    "country": "Puerto Rico",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "PS",
+    "country": "State of Palestine",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PT",
+    "country": "Portugal",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PW",
+    "country": "Palau",
+    "region": "Oceania",
+    "subRegion": "Micronesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "PY",
+    "country": "Paraguay",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "QA",
+    "country": "Qatar",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "RE",
+    "country": "R&#233;union",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "RO",
+    "country": "Romania",
+    "region": "Europe",
+    "subRegion": "Eastern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "RS",
+    "country": "Serbia",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "RU",
+    "country": "Russian Federation",
+    "region": "Europe",
+    "subRegion": "Eastern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "RW",
+    "country": "Rwanda",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "SA",
+    "country": "Saudi Arabia",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "SB",
+    "country": "Solomon Islands",
+    "region": "Oceania",
+    "subRegion": "Melanesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "SC",
+    "country": "Seychelles",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "SD",
+    "country": "Sudan",
+    "region": "Africa",
+    "subRegion": "Northern Africa",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "SE",
+    "country": "Sweden",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "SG",
+    "country": "Singapore",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "SH",
+    "country": "Saint Helena",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "SI",
+    "country": "Slovenia",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "SJ",
+    "country": "Svalbard and Jan Mayen Islands",
+    "region": "Europe",
+    "subRegion": "Northern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "SK",
+    "country": "Slovakia",
+    "region": "Europe",
+    "subRegion": "Eastern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "SL",
+    "country": "Sierra Leone",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "SM",
+    "country": "San Marino",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "SN",
+    "country": "Senegal",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "SO",
+    "country": "Somalia",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "SR",
+    "country": "Suriname",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "SS",
+    "country": "South Sudan",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "ST",
+    "country": "Sao Tome and Principe",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Middle Africa"
+  },
+  {
+    "iso2": "SV",
+    "country": "El Salvador",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Central America"
+  },
+  {
+    "iso2": "SX",
+    "country": "Sint Maarten (Dutch part)",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "SY",
+    "country": "Syrian Arab Republic",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "SZ",
+    "country": "Eswatini",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Southern Africa"
+  },
+  {
+    "iso2": "TC",
+    "country": "Turks and Caicos Islands",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "TD",
+    "country": "Chad",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Middle Africa"
+  },
+  {
+    "iso2": "TF",
+    "country": "French Southern Territories",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "TG",
+    "country": "Togo",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Western Africa"
+  },
+  {
+    "iso2": "TH",
+    "country": "Thailand",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "TJ",
+    "country": "Tajikistan",
+    "region": "Asia",
+    "subRegion": "Central Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "TK",
+    "country": "Tokelau",
+    "region": "Oceania",
+    "subRegion": "Polynesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "TL",
+    "country": "Timor-Leste",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "TM",
+    "country": "Turkmenistan",
+    "region": "Asia",
+    "subRegion": "Central Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "TN",
+    "country": "Tunisia",
+    "region": "Africa",
+    "subRegion": "Northern Africa",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "TO",
+    "country": "Tonga",
+    "region": "Oceania",
+    "subRegion": "Polynesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "TR",
+    "country": "T&#252;rkiye",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "TT",
+    "country": "Trinidad and Tobago",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "TV",
+    "country": "Tuvalu",
+    "region": "Oceania",
+    "subRegion": "Polynesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "TZ",
+    "country": "United Republic of Tanzania",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "UA",
+    "country": "Ukraine",
+    "region": "Europe",
+    "subRegion": "Eastern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "UG",
+    "country": "Uganda",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "UM",
+    "country": "United States Minor Outlying Islands",
+    "region": "Oceania",
+    "subRegion": "Micronesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "US",
+    "country": "United States of America",
+    "region": "Americas",
+    "subRegion": "Northern America",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "UY",
+    "country": "Uruguay",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "UZ",
+    "country": "Uzbekistan",
+    "region": "Asia",
+    "subRegion": "Central Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "VA",
+    "country": "Holy See",
+    "region": "Europe",
+    "subRegion": "Southern Europe",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "VC",
+    "country": "Saint Vincent and the Grenadines",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "VE",
+    "country": "Venezuela (Bolivarian Republic of)",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "South America"
+  },
+  {
+    "iso2": "VG",
+    "country": "British Virgin Islands",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "VI",
+    "country": "United States Virgin Islands",
+    "region": "Americas",
+    "subRegion": "Latin America and the Caribbean",
+    "intermediateRegion": "Caribbean"
+  },
+  {
+    "iso2": "VN",
+    "country": "Viet Nam",
+    "region": "Asia",
+    "subRegion": "South-eastern Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "VU",
+    "country": "Vanuatu",
+    "region": "Oceania",
+    "subRegion": "Melanesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "WF",
+    "country": "Wallis and Futuna Islands",
+    "region": "Oceania",
+    "subRegion": "Polynesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "WS",
+    "country": "Samoa",
+    "region": "Oceania",
+    "subRegion": "Polynesia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "YE",
+    "country": "Yemen",
+    "region": "Asia",
+    "subRegion": "Western Asia",
+    "intermediateRegion": null
+  },
+  {
+    "iso2": "YT",
+    "country": "Mayotte",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "ZA",
+    "country": "South Africa",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Southern Africa"
+  },
+  {
+    "iso2": "ZM",
+    "country": "Zambia",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  },
+  {
+    "iso2": "ZW",
+    "country": "Zimbabwe",
+    "region": "Africa",
+    "subRegion": "Sub-Saharan Africa",
+    "intermediateRegion": "Eastern Africa"
+  }
+]
