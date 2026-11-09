@@ -36,9 +36,8 @@ export const scopeConditions = (sql: SqlClient.SqlClient, scope: Scope) => {
     ...(origins.length === 0
       ? []
       : [
-          sql`EXISTS (
-            SELECT 1 FROM origins AS scoped
-            WHERE scoped.game_qid = games.qid AND ${sql.and(origins)}
+          sql`games.qid IN (
+            SELECT scoped.game_qid FROM origins AS scoped WHERE ${sql.and(origins)}
           )`,
         ]),
   ];
