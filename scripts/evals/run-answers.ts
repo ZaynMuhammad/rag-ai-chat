@@ -3,7 +3,6 @@ import {
   Config,
   Duration,
   Effect,
-  ExecutionPlan,
   FileSystem,
   Layer,
   Option,
@@ -32,12 +31,13 @@ import {
 import { mean } from "../../src/evals/RetrievalMetrics";
 import type { ChatEvent } from "../../src/server/chat/ChatProtocol";
 import {
-  type ChatPlan,
+  type ChatProvider,
   GroundedChat,
   passagesPerAnswer,
 } from "../../src/server/chat/GroundedChat";
 import { groundedPrompt } from "../../src/server/chat/GroundedPrompt";
 import { anthropic } from "../../src/server/provider/ChatModels";
+import { CircuitBreaker } from "../../src/server/provider/CircuitBreaker";
 import { MockProvider } from "../../src/server/provider/MockProvider";
 import type { RetrievedPassage } from "../../src/server/search/Passage";
 import { Retriever } from "../../src/server/search/Retriever";
@@ -270,12 +270,14 @@ const program = Effect.gen(function* () {
     (p) => p.gameQid,
   );
 
-  const plan: ChatPlan =
+  const answerer: ChatProvider =
     provider === "mock"
-      ? ExecutionPlan.make({
-          provide: MockProvider.extractive({ tokenDelay: Duration.zero }),
-        })
-      : ExecutionPlan.make({ provide: anthropic(model), attempts: 2 });
+      ? {
+          id: "mock-extractive",
+          provider: "mock",
+          model: MockProvider.extractive({ tokenDelay: Duration.zero }),
+        }
+      : { id: model, provider: "anthropic", model: anthropic(model) };
   const judgeModel = anthropic(model, { max_tokens: judgeMaxTokens });
 
   const answerOne = (question: EvalQuestion) =>
@@ -283,7 +285,7 @@ const program = Effect.gen(function* () {
       const chat = yield* GroundedChat;
       const collected = collect(
         yield* Stream.runCollect(
-          chat.stream({
+          yield* chat.stream({
             messages: [{ role: "user", content: question.question }],
             scope: {},
           }),
@@ -314,7 +316,13 @@ const program = Effect.gen(function* () {
 
   const outcomes = yield* Effect.forEach(questions, answerOne, {
     concurrency: provider === "mock" ? 1 : 4,
-  }).pipe(Effect.provide(GroundedChat.layer(plan)));
+  }).pipe(
+    Effect.provide(
+      GroundedChat.layer([answerer], Duration.infinity).pipe(
+        Layer.provide(CircuitBreaker.layer),
+      ),
+    ),
+  );
 
   const withJudge = judge !== "none";
   const results: GroupResults = Object.fromEntries(
