@@ -36,7 +36,7 @@ const mockPrimary = Effect.gen(function* () {
   );
   if (Option.isNone(schedule)) return [];
   const model = yield* MockProvider.primary(parseMockSchedule(schedule.value));
-  return [ExecutionPlan.make({ provide: model, attempts: 2 })];
+  return [ExecutionPlan.make({ provide: model })];
 });
 
 const anthropicSteps = Effect.gen(function* () {
@@ -45,8 +45,12 @@ const anthropicSteps = Effect.gen(function* () {
   const model = yield* Config.String("ANTHROPIC_MODEL").pipe(
     Config.withDefault("claude-haiku-5-5"),
   );
-  return [ExecutionPlan.make({ provide: anthropic(model), attempts: 2 })];
+  return [ExecutionPlan.make({ provide: anthropic(model) })];
 });
+
+export const firstTokenDeadline = Config.Duration("FIRST_TOKEN_TIMEOUT").pipe(
+  Config.withDefault(Duration.seconds(2)),
+);
 
 export const chatPlan: Effect.Effect<ChatPlan, Config.ConfigError> = Effect.gen(
   function* () {
