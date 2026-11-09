@@ -1,4 +1,14 @@
-import { Duration, Effect, Layer, Stream } from "effect";
+import {
+  Clock,
+  Duration,
+  Effect,
+  Layer,
+  Option,
+  Random,
+  Ref,
+  Schema,
+  Stream,
+} from "effect";
 import {
   AiError,
   LanguageModel,
@@ -12,6 +22,7 @@ import { extractiveAnswer } from "./ExtractiveAnswer";
 export interface MockProviderOptions {
   readonly reply?: string | ((prompt: Prompt.Prompt) => string);
   readonly tokenDelay?: Duration.Input;
+  readonly before?: Effect.Effect<void, AiError.AiError>;
 }
 
 const defaultReply = "This is a reply from the mock provider.";
@@ -66,18 +77,23 @@ const streamParts = (
 const replyingModel = ({
   reply = defaultReply,
   tokenDelay = defaultTokenDelay,
+  before = Effect.void,
 }: MockProviderOptions) => {
   const replyTo = (prompt: Prompt.Prompt) =>
     typeof reply === "string" ? reply : reply(prompt);
   return LanguageModel.make({
-    generateText: ({ prompt }) => {
-      const text = replyTo(prompt);
-      return Effect.succeed([
-        { type: "text", text },
-        finishPart(tokenize(text).length),
-      ]);
-    },
-    streamText: ({ prompt }) => streamParts(replyTo(prompt), tokenDelay),
+    generateText: ({ prompt }) =>
+      Effect.map(before, () => {
+        const text = replyTo(prompt);
+        return [
+          { type: "text" as const, text },
+          finishPart(tokenize(text).length),
+        ];
+      }),
+    streamText: ({ prompt }) =>
+      Stream.unwrap(
+        Effect.map(before, () => streamParts(replyTo(prompt), tokenDelay)),
+      ),
   });
 };
 
@@ -98,6 +114,103 @@ const failingModel = LanguageModel.make({
   streamText: () => Stream.fail(outage("streamText")),
 });
 
+export type MockMode =
+  | { readonly _tag: "ok" }
+  | { readonly _tag: "outage" }
+  | { readonly _tag: "hang" }
+  | { readonly _tag: "slow" }
+  | { readonly _tag: "flaky"; readonly failureRate: number };
+
+export interface MockPhase {
+  readonly mode: MockMode;
+  readonly seconds: number | undefined;
+}
+
+export const outageLatency = Duration.millis(500);
+export const slowFirstToken = Duration.seconds(5);
+
+const misbehave = (mode: MockMode): Effect.Effect<void, AiError.AiError> => {
+  switch (mode._tag) {
+    case "ok":
+      return Effect.void;
+    case "outage":
+      return Effect.andThen(
+        Effect.sleep(outageLatency),
+        Effect.fail(outage("streamText")),
+      );
+    case "hang":
+      return Effect.never;
+    case "slow":
+      return Effect.sleep(slowFirstToken);
+    case "flaky":
+      return Effect.flatMap(Random.next, (roll) =>
+        roll < mode.failureRate ? misbehave({ _tag: "outage" }) : Effect.void,
+      );
+  }
+};
+
+const modeAt = (
+  phases: ReadonlyArray<MockPhase>,
+  elapsedSeconds: number,
+): MockMode => {
+  let end = 0;
+  for (const phase of phases) {
+    end += phase.seconds ?? Infinity;
+    if (elapsedSeconds < end) return phase.mode;
+  }
+  return phases.at(-1)?.mode ?? { _tag: "ok" };
+};
+
+const mockModePattern = String.raw`(ok|outage|hang|slow|flaky:(0(\.\d+)?|1(\.0+)?))(@\d+)?`;
+
+export const MockSchedule = Schema.String.check(
+  Schema.isPattern(new RegExp(`^${mockModePattern}(,${mockModePattern})*$`)),
+);
+
+const parseMode = (text: string): MockMode => {
+  const [name, rate] = text.split(":");
+  if (name === "outage" || name === "hang" || name === "slow") {
+    return { _tag: name };
+  }
+  if (name === "flaky") return { _tag: "flaky", failureRate: Number(rate) };
+  return { _tag: "ok" };
+};
+
+export const parseMockSchedule = (schedule: string): Array<MockPhase> =>
+  schedule.split(",").map((item) => {
+    const [mode = "ok", seconds] = item.split("@");
+    return {
+      mode: parseMode(mode),
+      seconds: seconds === undefined ? undefined : Number(seconds),
+    };
+  });
+
+const primaryModel = (phases: ReadonlyArray<MockPhase>) =>
+  Effect.map(Ref.make(Option.none<number>()), (startedAt) => {
+    const currentMode = Effect.gen(function* () {
+      const now = yield* Clock.currentTimeMillis;
+      const start = yield* Ref.modify(startedAt, (started) =>
+        Option.match(started, {
+          onNone: () => [now, Option.some(now)] as const,
+          onSome: (at) => [at, started] as const,
+        }),
+      );
+      return modeAt(phases, (now - start) / 1000);
+    });
+    return Model.make(
+      "mock",
+      "mock-primary",
+      Layer.effect(
+        LanguageModel.LanguageModel,
+        replyingModel({
+          reply: extractiveReply,
+          tokenDelay: Duration.millis(15),
+          before: Effect.flatMap(currentMode, misbehave),
+        }),
+      ),
+    );
+  });
+
 export const MockProvider = {
   model: (options: MockProviderOptions = {}) =>
     Model.make(
@@ -114,6 +227,7 @@ export const MockProvider = {
         replyingModel({ ...options, reply: extractiveReply }),
       ),
     ),
+  primary: primaryModel,
   failing: Model.make(
     "mock",
     "mock-failing",
