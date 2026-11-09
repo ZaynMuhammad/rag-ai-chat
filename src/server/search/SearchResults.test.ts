@@ -135,12 +135,14 @@ layer(SearchResults.layer.pipe(Layer.provide(fixture)))(
       }),
     );
 
-    it.effect("feeds query term coverage of the top passage to the gate", () =>
-      Effect.gen(function* () {
-        const { signals } = yield* search("Pajitnov Soviet zeppelin");
-        assert.closeTo(signals.termCoverage, 2 / 3, 1e-9);
-        assert.strictEqual(signals.agreement, 1);
-      }),
+    it.effect(
+      "counts only the query terms the top passage itself contains",
+      () =>
+        Effect.gen(function* () {
+          const { results, signals } = yield* search("Pajitnov Soviet Compile");
+          assert.strictEqual(results[0]?.passageId, "Q2#0");
+          assert.closeTo(signals.termCoverage, 1 / 3, 1e-9);
+        }),
     );
 
     it.effect(

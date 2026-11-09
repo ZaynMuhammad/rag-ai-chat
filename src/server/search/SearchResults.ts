@@ -114,7 +114,8 @@ export class SearchResults extends Context.Service<
             rowid,
             snippet(passages_fts, 1, char(2), char(3), '…', ${snippetTokens}) AS marked
           FROM passages_fts
-          WHERE passages_fts MATCH ${match} AND rowid IN ${sql.in(rowids)}
+          WHERE passages_fts MATCH ${match}
+            AND rowid IN (SELECT value FROM json_each(${JSON.stringify(rowids)}))
         `,
       });
 
@@ -123,7 +124,7 @@ export class SearchResults extends Context.Service<
         Result: Schema.Struct({ rowid: Schema.Number }),
         execute: ({ match, rowid }) => sql`
           SELECT rowid FROM passages_fts
-          WHERE passages_fts MATCH ${match} AND rowid = ${rowid}
+          WHERE passages_fts MATCH ${match} AND rowid = CAST(${rowid} AS INTEGER)
         `,
       });
 
