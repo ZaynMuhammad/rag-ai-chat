@@ -9,6 +9,7 @@ import {
 } from "react";
 import { answerSegments } from "@/lib/citations";
 import { formatReleased } from "@/lib/release";
+import { fetchWithSession } from "@/lib/session";
 import type { ChatMessage } from "@/server/chat/ChatProtocol";
 import { readSse } from "@/server/chat/sse";
 import type { Scope } from "@/server/games/Scope";
@@ -164,12 +165,20 @@ export function ChatPanel({
     abortRef.current = controller;
     setStreaming(true);
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetchWithSession("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ messages: history, scope }),
         signal: controller.signal,
       });
+      if (response.status === 429) {
+        update(assistantId, (message) => ({
+          ...message,
+          content: "You're asking quickly. Wait a moment and try again.",
+          failed: true,
+        }));
+        return;
+      }
       if (!response.ok || response.body === null)
         throw new Error(`HTTP ${response.status}`);
       for await (const event of readSse(response.body)) {
