@@ -2,12 +2,14 @@ import { readFileSync, readdirSync } from "node:fs";
 
 export const base = process.env["LOAD_BASE_URL"] ?? "http://localhost:3000";
 const timeoutMs = Number(process.env["LOAD_TIMEOUT_MS"] ?? "30000");
+const metricsToken = process.env["LOAD_METRICS_TOKEN"];
 const requestsPerSession = 6;
 const maxSessions = 110;
 
 const evalDirectory = new URL("../../evals/games/", import.meta.url);
-const questions = readdirSync(evalDirectory)
+export const evalQuestions = readdirSync(evalDirectory)
   .filter((file) => file.endsWith(".jsonl"))
+  .toSorted()
   .flatMap((file) =>
     readFileSync(new URL(file, evalDirectory), "utf8")
       .split("\n")
@@ -112,7 +114,51 @@ export const steadyArrivals = (
     (_, index) => offsetMs + (index * 1000) / ratePerSecond,
   );
 
-export const runLoad = async (arrivalsMs: ReadonlyArray<number>) => {
+const cacheResults = async (): Promise<Record<string, number> | undefined> => {
+  const response = await fetch(`${base}/api/metrics`, {
+    headers:
+      metricsToken === undefined
+        ? {}
+        : { authorization: `Bearer ${metricsToken}` },
+  });
+  if (!response.ok) return undefined;
+  const exposition = await response.text();
+  return Object.fromEntries(
+    [
+      ...exposition.matchAll(
+        /^answer_cache_requests_total\{result="(\w+)"\} (\d+)$/gm,
+      ),
+    ].map(([, result, count]) => [result ?? "", Number(count)]),
+  );
+};
+
+const cacheHitRate = (
+  before: Record<string, number> | undefined,
+  after: Record<string, number> | undefined,
+) => {
+  if (before === undefined || after === undefined) return "n/a";
+  const delta = (result: string) =>
+    (after[result] ?? 0) - (before[result] ?? 0);
+  const served = delta("hit") + delta("coalesced");
+  const cacheable = served + delta("miss");
+  return {
+    hits: delta("hit"),
+    coalesced: delta("coalesced"),
+    misses: delta("miss"),
+    hitRate:
+      cacheable === 0 ? 0 : Number((delta("hit") / cacheable).toFixed(4)),
+    servedWithoutUpstream:
+      cacheable === 0 ? 0 : Number((served / cacheable).toFixed(4)),
+  };
+};
+
+const inEvalOrder = (index: number) =>
+  evalQuestions[index % evalQuestions.length] ?? "";
+
+export const runLoad = async (
+  arrivalsMs: ReadonlyArray<number>,
+  questionAt: (index: number) => string = inEvalOrder,
+) => {
   const sessionCount = Math.min(
     maxSessions,
     Math.ceil(arrivalsMs.length / requestsPerSession),
@@ -120,19 +166,24 @@ export const runLoad = async (arrivalsMs: ReadonlyArray<number>) => {
   const sessions = await Promise.all(
     Array.from({ length: sessionCount }, mintSession),
   );
+  const questions = arrivalsMs.map((_, index) => questionAt(index));
   console.log(
-    `${arrivalsMs.length} chats over ${Math.round((arrivalsMs.at(-1) ?? 0) / 1000)}s, ${sessionCount} sessions, ${base}`,
+    `${arrivalsMs.length} chats over ${Math.round((arrivalsMs.at(-1) ?? 0) / 1000)}s, ${new Set(questions).size} distinct questions, ${sessionCount} sessions, ${base}`,
   );
+  const before = await cacheResults();
   const pending: Array<Promise<Sample>> = [];
   const started = performance.now();
   for (const [index, offset] of arrivalsMs.entries()) {
     const wait = started + offset - performance.now();
     if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
     const token = sessions[index % sessions.length] ?? "";
-    const question = questions[index % questions.length] ?? "";
-    pending.push(ask(token, question, offset));
+    pending.push(ask(token, questions[index] ?? "", offset));
   }
-  return Promise.all(pending);
+  const samples = await Promise.all(pending);
+  console.log(
+    `server cache: ${JSON.stringify(cacheHitRate(before, await cacheResults()))}`,
+  );
+  return samples;
 };
 
 const percentile = (values: ReadonlyArray<number>, p: number) => {
