@@ -85,8 +85,10 @@ Treat the rest of this document as good defaults, not hard rules. The developer'
 ## Where code lives
 
 - `src/app` - Next.js App Router pages, layouts, and route handlers.
-- `src/server` - Effect services behind the route handlers. `chat/ChatStream.ts` and its test are the reference for a service, its layer, and how to test it.
-- `src/server/provider` - providers as `effect/ai` `LanguageModel` layers. `MockProvider.model()` replies with a fixed text one token at a time, and `MockProvider.failing` simulates an outage. Use them in dev, tests, and load scenarios.
+- `src/corpus` and `scripts/corpus` - build the game corpus (`data/corpus/games.sqlite`, git-ignored) from Wikidata and structured-wikipedia. `CorpusStore.ts` owns the schema and migrations.
+- `src/server` - Effect services behind the route handlers: `games/GameCatalog` (browse), `search/Retriever` (BM25), `chat/GroundedChat` (citations, streaming, failover), `gateway/AnonymousSessions` (tokens and rate limits). `chat/GroundedChat.ts` and its test are the reference for a service, its layer, and how to test it. `corpus/CorpusFixture.ts` builds an in-memory corpus for tests.
+- `src/server/provider` - providers as `effect/ai` `LanguageModel` layers. `MockProvider.extractive()` answers by quoting retrieved sentences, `MockProvider.model()` replies with a fixed text, and `MockProvider.failing` simulates an outage. Use them in dev, tests, and load scenarios.
+- `evals/games` - the frozen eval set and the latest retrieval results. `bun run evals:retrieval` regenerates the results; `bun run load:steady` runs the load scenario against a running server.
 - `.repos/effect` - Effect 4 source, vendored as a squashed git subtree at the tag matching the installed `effect` version. Read `.repos/effect/LLMS.md` before writing Effect code. Prefer its patterns over invented ones. Never edit or import from it. When you bump `effect`, resync the subtree to the matching tag.
 
 ## Taste
