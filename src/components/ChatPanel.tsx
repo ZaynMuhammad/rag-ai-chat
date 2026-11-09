@@ -3,6 +3,8 @@
 import Link from "next/link";
 import {
   type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
   type SyntheticEvent,
   useRef,
   useState,
@@ -38,7 +40,43 @@ const shortHeading = (passage: RetrievedPassage) =>
     ? passage.heading.slice(passage.title.length + 3)
     : "Overview";
 
-function Answer({ message }: { message: UiMessage }) {
+export type CiteHandler = (passage: RetrievedPassage) => boolean;
+
+function PassageLink({
+  passage,
+  onCite,
+  className,
+  title,
+  children,
+}: {
+  passage: RetrievedPassage;
+  onCite: CiteHandler | undefined;
+  className: string;
+  title?: string;
+  children: ReactNode;
+}) {
+  const onClick = (event: MouseEvent) => {
+    if (onCite?.(passage) === true) event.preventDefault();
+  };
+  return (
+    <Link
+      href={passageHref(passage)}
+      onClick={onClick}
+      className={className}
+      {...(title === undefined ? {} : { title })}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function Answer({
+  message,
+  onCite,
+}: {
+  message: UiMessage;
+  onCite: CiteHandler | undefined;
+}) {
   return (
     <p className="whitespace-pre-wrap leading-relaxed">
       {answerSegments(message.content, message.passages.length).map(
@@ -47,14 +85,15 @@ function Answer({ message }: { message: UiMessage }) {
             return <span key={index}>{segment.text}</span>;
           const passage = message.passages[segment.number - 1];
           return passage === undefined ? null : (
-            <Link
+            <PassageLink
               key={index}
-              href={passageHref(passage)}
+              passage={passage}
+              onCite={onCite}
               title={`${passage.title}: ${shortHeading(passage)}`}
               className="mx-0.5 rounded bg-primary/15 px-1 align-super text-[0.7em] font-semibold text-primary hover:bg-primary/25"
             >
               {segment.number}
-            </Link>
+            </PassageLink>
           );
         },
       )}
@@ -62,7 +101,13 @@ function Answer({ message }: { message: UiMessage }) {
   );
 }
 
-function Sources({ passages }: { passages: ReadonlyArray<RetrievedPassage> }) {
+function Sources({
+  passages,
+  onCite,
+}: {
+  passages: ReadonlyArray<RetrievedPassage>;
+  onCite: CiteHandler | undefined;
+}) {
   if (passages.length === 0) return null;
   return (
     <details className="mt-3 border-t border-border pt-2 text-xs text-muted-foreground">
@@ -75,12 +120,16 @@ function Sources({ passages }: { passages: ReadonlyArray<RetrievedPassage> }) {
             <span className="w-4 shrink-0 text-right font-semibold">
               {index + 1}
             </span>
-            <Link href={passageHref(passage)} className="hover:underline">
+            <PassageLink
+              passage={passage}
+              onCite={onCite}
+              className="hover:underline"
+            >
               <span className="font-medium text-foreground">
                 {passage.title}
               </span>{" "}
               · {shortHeading(passage)} · {formatReleased(passage.released)}
-            </Link>
+            </PassageLink>
           </li>
         ))}
       </ol>
@@ -91,9 +140,11 @@ function Sources({ passages }: { passages: ReadonlyArray<RetrievedPassage> }) {
 function Bubble({
   message,
   pending,
+  onCite,
 }: {
   message: UiMessage;
   pending: boolean;
+  onCite: CiteHandler | undefined;
 }) {
   if (message.role === "user") {
     return (
@@ -113,7 +164,7 @@ function Bubble({
       {message.content === "" && pending ? (
         <span className="text-muted-foreground">Searching the articles…</span>
       ) : (
-        <Answer message={message} />
+        <Answer message={message} onCite={onCite} />
       )}
       {message.model !== null && (
         <p className="mt-2 text-[11px] text-muted-foreground">
@@ -121,7 +172,7 @@ function Bubble({
           {message.model.startsWith("mock") && " (quotes the passages, no LLM)"}
         </p>
       )}
-      <Sources passages={message.passages} />
+      <Sources passages={message.passages} onCite={onCite} />
     </div>
   );
 }
@@ -130,10 +181,12 @@ export function ChatPanel({
   scope,
   placeholder,
   suggestions,
+  onCite,
 }: {
   scope: Scope;
   placeholder: string;
   suggestions: ReadonlyArray<string>;
+  onCite?: CiteHandler;
 }) {
   const [messages, setMessages] = useState<ReadonlyArray<UiMessage>>([]);
   const [draft, setDraft] = useState("");
@@ -278,6 +331,7 @@ export function ChatPanel({
                 key={message.id}
                 message={message}
                 pending={streaming && message.id === lastId}
+                onCite={onCite}
               />
             ))
           )}

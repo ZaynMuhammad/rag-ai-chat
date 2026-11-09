@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Game Atlas",
   description:
-    "Browse Wikipedia's video game articles by region and release date, and ask grounded questions with citations. No accounts, no tracking.",
+    "Explore Wikipedia's video game articles on a globe of the studios that made them, and ask grounded questions with citations. No accounts, no tracking.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -35,7 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               href="/"
               className="text-muted-foreground hover:text-foreground"
             >
-              Browse
+              Globe
             </Link>
             <Link
               href="/chat"
