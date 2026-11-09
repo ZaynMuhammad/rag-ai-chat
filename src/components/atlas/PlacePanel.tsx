@@ -6,13 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { ChatGame } from "@/lib/chats";
 import type {
   Pin,
   PlaceGame,
   PlaceGamesPage,
 } from "@/server/games/GameProtocol";
-
-export type GameRef = Pick<PlaceGame, "qid" | "title">;
 
 export interface PlaceSelection {
   readonly pin: Pin;
@@ -26,7 +25,7 @@ function GameRow({
   onOpen,
 }: {
   game: PlaceGame;
-  onOpen: (game: GameRef) => void;
+  onOpen: (game: ChatGame) => void;
 }) {
   const year = game.released?.slice(0, 4) ?? null;
   return (
@@ -73,7 +72,7 @@ function Page({
 }: {
   promise: Promise<PlaceGamesPage | null>;
   isLast: boolean;
-  onOpen: (game: GameRef) => void;
+  onOpen: (game: ChatGame) => void;
   onMore: (page: number) => void;
 }) {
   const page = use(promise);
@@ -124,7 +123,7 @@ export function PlacePanel({
 }: {
   selection: PlaceSelection;
   onClose: () => void;
-  onOpen: (game: GameRef) => void;
+  onOpen: (game: ChatGame) => void;
   onMore: (page: number) => void;
 }) {
   const { pin, pages } = selection;

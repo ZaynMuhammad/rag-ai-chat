@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ArticleMeta, ArticleText } from "@/components/atlas/Article";
-import { ChatPanel } from "@/components/ChatPanel";
+import { GameChat } from "@/components/atlas/GameChat";
 import { GameCatalog } from "@/server/games/GameCatalog";
 import { runAtRequestTime } from "@/app/run";
 
@@ -42,16 +42,9 @@ async function Game({ params }: { params: Promise<{ qid: string }> }) {
       </article>
       <aside className="lg:sticky lg:top-4 lg:h-[calc(100dvh-6rem)]">
         <div className="flex h-[32rem] flex-col rounded-xl border bg-card lg:h-full">
-          <p className="border-b px-4 py-2 text-sm font-medium">
-            Ask about {game.value.title}
-          </p>
-          <ChatPanel
-            scope={{ gameQid: game.value.qid }}
-            placeholder={`Ask about ${game.value.title}`}
-            suggestions={[
-              `Who developed ${game.value.title}?`,
-              `How was ${game.value.title} received?`,
-            ]}
+          <GameChat
+            game={{ qid: game.value.qid, title: game.value.title }}
+            chatId={crypto.randomUUID()}
           />
         </div>
       </aside>

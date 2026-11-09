@@ -77,20 +77,6 @@ const fixture = corpusFixture([
 layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
   "GameCatalog",
   (it) => {
-    describe("subRegions", () => {
-      it.effect("counts games with text once per sub-region", () =>
-        Effect.gen(function* () {
-          const catalog = yield* GameCatalog;
-          const asia = (yield* catalog.subRegions).filter(
-            (row) => row.region === "Asia",
-          );
-          assert.deepStrictEqual(asia, [
-            { region: "Asia", subRegion: "Eastern Asia", games: 2 },
-          ]);
-        }),
-      );
-    });
-
     describe("pins", () => {
       it.effect(
         "pins a game at its studio's city and falls back to its country only when no studio is known",

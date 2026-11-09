@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, use } from "react";
-import { ChatPanel, type CiteHandler } from "@/components/ChatPanel";
+import type { CiteHandler } from "@/components/ChatPanel";
 import {
   Dialog,
   DialogContent,
@@ -11,13 +11,16 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { ChatGame } from "@/lib/chats";
 import type { GameDetail } from "@/server/games/GameProtocol";
 import { ArticleMeta, ArticleText, revealPassage } from "./Article";
-import type { GameRef } from "./PlacePanel";
+import { GameChat } from "./GameChat";
 
 export interface OpenGame {
-  readonly game: GameRef;
+  readonly game: ChatGame;
+  readonly chatId: string;
   readonly detail: Promise<GameDetail | null>;
+  readonly focusPassageId?: string;
 }
 
 const scrollToPassage =
@@ -30,7 +33,13 @@ const scrollToPassage =
     return true;
   };
 
-function ArticleBody({ detail }: { detail: Promise<GameDetail | null> }) {
+function ArticleBody({
+  detail,
+  focusPassageId,
+}: {
+  detail: Promise<GameDetail | null>;
+  focusPassageId: string | undefined;
+}) {
   const game = use(detail);
   if (game === null)
     return (
@@ -42,7 +51,10 @@ function ArticleBody({ detail }: { detail: Promise<GameDetail | null> }) {
     <>
       <ArticleMeta game={game} />
       <div className="mt-6">
-        <ArticleText game={game} />
+        <ArticleText
+          game={game}
+          {...(focusPassageId === undefined ? {} : { focusPassageId })}
+        />
       </div>
     </>
   );
@@ -88,19 +100,17 @@ export function GameDialog({
             <ScrollArea className="min-h-0">
               <div className="px-5 py-4">
                 <Suspense fallback={<ArticleLoading />}>
-                  <ArticleBody detail={open.detail} />
+                  <ArticleBody
+                    detail={open.detail}
+                    focusPassageId={open.focusPassageId}
+                  />
                 </Suspense>
               </div>
             </ScrollArea>
             <div className="flex min-h-0 flex-col border-t bg-muted/30 lg:border-t-0 lg:border-l">
-              <ChatPanel
-                key={open.game.qid}
-                scope={{ gameQid: open.game.qid }}
-                placeholder={`Ask about ${open.game.title}`}
-                suggestions={[
-                  `Who developed ${open.game.title}?`,
-                  `How was ${open.game.title} received?`,
-                ]}
+              <GameChat
+                game={open.game}
+                chatId={open.chatId}
                 onCite={scrollToPassage(open.game.qid)}
               />
             </div>

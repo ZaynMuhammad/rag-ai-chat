@@ -73,7 +73,13 @@ export function ArticleMeta({ game }: { game: GameDetail }) {
   );
 }
 
-export function ArticleText({ game }: { game: GameDetail }) {
+export function ArticleText({
+  game,
+  focusPassageId,
+}: {
+  game: GameDetail;
+  focusPassageId?: string;
+}) {
   return (
     <div className="space-y-6">
       {game.passages.map((passage) => {
@@ -82,6 +88,7 @@ export function ArticleText({ game }: { game: GameDetail }) {
           <section
             key={passage.id}
             id={passage.id}
+            ref={passage.id === focusPassageId ? revealPassage : undefined}
             className="scroll-mt-4 rounded-md transition-colors target:bg-primary/10 target:p-3"
           >
             {name !== null && (

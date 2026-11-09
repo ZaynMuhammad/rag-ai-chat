@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpIcon, SquareIcon } from "lucide-react";
 import Link from "next/link";
 import {
   type KeyboardEvent,
@@ -9,22 +10,17 @@ import {
   useRef,
   useState,
 } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { type CitedPassage, citedPassage, type UiMessage } from "@/lib/chats";
 import { answerSegments } from "@/lib/citations";
 import { formatReleased } from "@/lib/release";
 import { fetchWithSession } from "@/lib/session";
 import type { ChatMessage } from "@/server/chat/ChatProtocol";
 import { readSse } from "@/server/chat/sse";
 import type { Scope } from "@/server/games/Scope";
-import type { RetrievedPassage } from "@/server/search/Passage";
 
-interface UiMessage {
-  readonly id: string;
-  readonly role: "user" | "assistant";
-  readonly content: string;
-  readonly passages: ReadonlyArray<RetrievedPassage>;
-  readonly model: string | null;
-  readonly failed: boolean;
-}
+export type CiteHandler = (passage: CitedPassage) => boolean;
 
 const toHistory = (messages: ReadonlyArray<UiMessage>): Array<ChatMessage> =>
   messages
@@ -32,15 +28,13 @@ const toHistory = (messages: ReadonlyArray<UiMessage>): Array<ChatMessage> =>
     .slice(-10)
     .map(({ role, content }) => ({ role, content }));
 
-const passageHref = (passage: RetrievedPassage) =>
+const passageHref = (passage: CitedPassage) =>
   `/games/${passage.gameQid}#${encodeURIComponent(passage.id)}`;
 
-const shortHeading = (passage: RetrievedPassage) =>
+const shortHeading = (passage: CitedPassage) =>
   passage.heading.startsWith(`${passage.title} > `)
     ? passage.heading.slice(passage.title.length + 3)
     : "Overview";
-
-export type CiteHandler = (passage: RetrievedPassage) => boolean;
 
 function PassageLink({
   passage,
@@ -49,9 +43,9 @@ function PassageLink({
   title,
   children,
 }: {
-  passage: RetrievedPassage;
+  passage: CitedPassage;
   onCite: CiteHandler | undefined;
-  className: string;
+  className?: string;
   title?: string;
   children: ReactNode;
 }) {
@@ -62,8 +56,8 @@ function PassageLink({
     <Link
       href={passageHref(passage)}
       onClick={onClick}
-      className={className}
       {...(title === undefined ? {} : { title })}
+      {...(className === undefined ? {} : { className })}
     >
       {children}
     </Link>
@@ -78,7 +72,7 @@ function Answer({
   onCite: CiteHandler | undefined;
 }) {
   return (
-    <p className="whitespace-pre-wrap leading-relaxed">
+    <p className="leading-relaxed whitespace-pre-wrap">
       {answerSegments(message.content, message.passages.length).map(
         (segment, index) => {
           if (segment.kind === "text")
@@ -105,12 +99,12 @@ function Sources({
   passages,
   onCite,
 }: {
-  passages: ReadonlyArray<RetrievedPassage>;
+  passages: ReadonlyArray<CitedPassage>;
   onCite: CiteHandler | undefined;
 }) {
   if (passages.length === 0) return null;
   return (
-    <details className="mt-3 border-t border-border pt-2 text-xs text-muted-foreground">
+    <details className="mt-3 border-t pt-2 text-xs text-muted-foreground">
       <summary className="cursor-pointer select-none">
         {passages.length} passages retrieved
       </summary>
@@ -156,9 +150,7 @@ function Bubble({
   return (
     <div
       className={`max-w-[92%] rounded-2xl rounded-bl-sm border px-4 py-3 text-sm ${
-        message.failed
-          ? "border-red-400/60 bg-red-500/10"
-          : "border-border bg-card"
+        message.failed ? "border-destructive/60 bg-destructive/10" : "bg-card"
       }`}
     >
       {message.content === "" && pending ? (
@@ -177,45 +169,47 @@ function Bubble({
   );
 }
 
+const blankMessage = (role: UiMessage["role"], content: string): UiMessage => ({
+  id: crypto.randomUUID(),
+  role,
+  content,
+  passages: [],
+  model: null,
+  failed: false,
+});
+
 export function ChatPanel({
   scope,
   placeholder,
-  suggestions,
+  initialMessages,
+  onSave,
   onCite,
+  emptyState,
+  suggestions = [],
 }: {
   scope: Scope;
   placeholder: string;
-  suggestions: ReadonlyArray<string>;
+  suggestions?: ReadonlyArray<string>;
+  initialMessages: ReadonlyArray<UiMessage>;
+  onSave: (messages: ReadonlyArray<UiMessage>) => void;
   onCite?: CiteHandler;
+  emptyState: ReactNode;
 }) {
-  const [messages, setMessages] = useState<ReadonlyArray<UiMessage>>([]);
+  const [messages, setMessages] = useState(initialMessages);
   const [draft, setDraft] = useState("");
   const [streaming, setStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const lastId = messages.at(-1)?.id;
 
-  const update = (id: string, change: (message: UiMessage) => UiMessage) => {
-    setMessages((current) =>
-      current.map((message) => (message.id === id ? change(message) : message)),
-    );
-  };
-
   const send = async (text: string) => {
-    const user: UiMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: text,
-      passages: [],
-      model: null,
-      failed: false,
+    const user = blankMessage("user", text);
+    const before = [...messages, user];
+    let assistant = blankMessage("assistant", "");
+    const update = (change: (message: UiMessage) => UiMessage) => {
+      assistant = change(assistant);
+      setMessages([...before, assistant]);
     };
-    const assistantId = crypto.randomUUID();
-    const history = toHistory([...messages, user]);
-    setMessages([
-      ...messages,
-      user,
-      { ...user, id: assistantId, role: "assistant", content: "" },
-    ]);
+    setMessages([...before, assistant]);
     const controller = new AbortController();
     abortRef.current = controller;
     setStreaming(true);
@@ -223,11 +217,11 @@ export function ChatPanel({
       const response = await fetchWithSession("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history, scope }),
+        body: JSON.stringify({ messages: toHistory(before), scope }),
         signal: controller.signal,
       });
       if (response.status === 429) {
-        update(assistantId, (message) => ({
+        update((message) => ({
           ...message,
           content: "You're asking quickly. Wait a moment and try again.",
           failed: true,
@@ -239,41 +233,34 @@ export function ChatPanel({
       for await (const event of readSse(response.body)) {
         switch (event._tag) {
           case "Citations":
-            update(assistantId, (message) => ({
+            update((message) => ({
               ...message,
-              passages: event.passages,
+              passages: event.passages.map(citedPassage),
             }));
             break;
           case "Delta":
-            update(assistantId, (message) => ({
+            update((message) => ({
               ...message,
               content: message.content + event.text,
             }));
             break;
           case "Failed":
-            update(assistantId, (message) => ({
+            update((message) => ({
               ...message,
               content: `${message.content}\n\n${event.message}`.trim(),
               failed: true,
             }));
             break;
           case "Done":
-            update(assistantId, (message) => ({
-              ...message,
-              model: event.model,
-            }));
+            update((message) => ({ ...message, model: event.model }));
             break;
         }
       }
     } catch {
       if (controller.signal.aborted) {
-        setMessages((current) =>
-          current.filter(
-            (message) => message.id !== assistantId || message.content !== "",
-          ),
-        );
+        if (assistant.content === "") setMessages(before);
       } else {
-        update(assistantId, (message) => ({
+        update((message) => ({
           ...message,
           content: "Something went wrong. Try again.",
           failed: true,
@@ -282,6 +269,7 @@ export function ChatPanel({
     } finally {
       abortRef.current = null;
       setStreaming(false);
+      onSave(assistant.content === "" ? before : [...before, assistant]);
     }
   };
 
@@ -304,42 +292,41 @@ export function ChatPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto">
-        <div className="flex flex-col gap-4 p-4">
-          {messages.length === 0 ? (
-            <div className="py-6 text-sm text-muted-foreground">
-              <p>
-                Answers come only from the retrieved Wikipedia passages, with
-                numbered citations.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {suggestions.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => void send(suggestion)}
-                    className="rounded-full border border-border px-3 py-1 text-xs hover:border-primary hover:text-primary"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            messages.map((message) => (
+      {messages.length === 0 ? (
+        <div className="relative min-h-0 flex-1">{emptyState}</div>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto">
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
+            {messages.map((message) => (
               <Bubble
                 key={message.id}
                 message={message}
                 pending={streaming && message.id === lastId}
                 onCite={onCite}
               />
-            ))
-          )}
+            ))}
+          </div>
         </div>
-      </div>
-      <form onSubmit={submit} className="border-t border-border p-3">
-        <div className="flex items-end gap-2">
-          <textarea
+      )}
+      <form onSubmit={submit} className="p-3">
+        {messages.length === 0 && suggestions.length > 0 && (
+          <div className="mx-auto mb-2 flex w-full max-w-3xl flex-wrap gap-2">
+            {suggestions.map((suggestion) => (
+              <Button
+                key={suggestion}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                onClick={() => void send(suggestion)}
+              >
+                {suggestion}
+              </Button>
+            ))}
+          </div>
+        )}
+        <div className="mx-auto flex w-full max-w-3xl items-end gap-2 rounded-2xl border bg-card p-2 shadow-sm focus-within:border-ring">
+          <Textarea
             value={draft}
             onChange={(event) => {
               setDraft(event.target.value);
@@ -349,24 +336,27 @@ export function ChatPanel({
             maxLength={2000}
             placeholder={placeholder}
             aria-label="Question"
-            className="max-h-40 min-h-10 flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            className="max-h-40 min-h-9 flex-1 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
           />
           {streaming ? (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Stop"
               onClick={() => abortRef.current?.abort()}
-              className="h-10 rounded-lg border border-border px-4 text-sm font-medium"
             >
-              Stop
-            </button>
+              <SquareIcon />
+            </Button>
           ) : (
-            <button
+            <Button
               type="submit"
+              size="icon"
+              aria-label="Send"
               disabled={draft.trim() === ""}
-              className="h-10 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-40"
             >
-              Ask
-            </button>
+              <ArrowUpIcon />
+            </Button>
           )}
         </div>
       </form>

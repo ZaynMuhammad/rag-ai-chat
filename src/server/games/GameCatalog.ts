@@ -13,13 +13,6 @@ import {
 } from "./GameProtocol";
 import { Qid } from "./Scope";
 
-export const SubRegionCount = Schema.Struct({
-  region: Schema.String,
-  subRegion: Schema.String,
-  games: Schema.Number,
-});
-export type SubRegionCount = typeof SubRegionCount.Type;
-
 const PlaceGameRow = Schema.Struct({
   ...PlaceGame.fields,
   genres: Schema.fromJsonString(Schema.Array(Schema.String)),
@@ -37,7 +30,6 @@ const isQid = Schema.is(Qid);
 export class GameCatalog extends Context.Service<
   GameCatalog,
   {
-    readonly subRegions: Effect.Effect<ReadonlyArray<SubRegionCount>>;
     readonly pins: Effect.Effect<ReadonlyArray<Pin>>;
     placeGames(query: PlaceGamesQuery): Effect.Effect<PlaceGamesPage>;
     game(qid: string): Effect.Effect<GameDetail, GameNotFound>;
@@ -49,22 +41,6 @@ export class GameCatalog extends Context.Service<
       const sql = yield* SqlClient.SqlClient;
 
       const pinHasText = sql`pins.game_qid IN (SELECT game_qid FROM passages)`;
-
-      const subRegions = yield* SqlSchema.findAll({
-        Request: Schema.Void,
-        Result: SubRegionCount,
-        execute: () => sql`
-          SELECT origins.region, origins.sub_region AS subRegion, COUNT(DISTINCT games.qid) AS games
-          FROM origins JOIN games ON games.qid = origins.game_qid
-          WHERE EXISTS (SELECT 1 FROM passages WHERE passages.game_qid = games.qid)
-          GROUP BY origins.region, origins.sub_region
-          ORDER BY origins.region, games DESC
-        `,
-      })(undefined).pipe(
-        Effect.orDie,
-        Effect.withSpan("GameCatalog.subRegions"),
-        Effect.cached,
-      );
 
       const pins = yield* SqlSchema.findAll({
         Request: Schema.Void,
@@ -189,7 +165,7 @@ export class GameCatalog extends Context.Service<
         };
       });
 
-      return GameCatalog.of({ subRegions, pins, placeGames, game });
+      return GameCatalog.of({ pins, placeGames, game });
     }),
   );
 }
