@@ -48,6 +48,7 @@ const gateway = Layer.mergeAll(
     Layer.provide(
       answerCacheLayer({
         planIdentity: "mock-extractive",
+        primaryModel: "mock-extractive",
         capacity: 10,
         timeToLive: "10 minutes",
       }),

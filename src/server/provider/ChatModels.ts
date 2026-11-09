@@ -49,3 +49,8 @@ export const chatPlanIdentity = Effect.map(
     onSome: (model) => `anthropic:${model},mock-extractive`,
   }),
 );
+
+export const chatPrimaryModel = Effect.map(
+  anthropicModel,
+  Option.getOrElse(() => "mock-extractive"),
+);

@@ -78,10 +78,17 @@ const failedAnswer: ReadonlyArray<ChatEvent> = [
   { _tag: "Done", model: "mock-extractive" },
 ];
 
+const fallbackAnswer: ReadonlyArray<ChatEvent> = [
+  { _tag: "Citations", passages: [] },
+  { _tag: "Delta", text: "Alexey Pajitnov. [1]" },
+  { _tag: "Done", model: "mock-fallback" },
+];
+
 type Feed = Queue.Queue<ChatEvent, Cause.Done>;
 
 const options: AnswerCacheOptions = {
   planIdentity: "mock-extractive",
+  primaryModel: "mock-extractive",
   capacity: 10,
   timeToLive: "10 minutes",
 };
@@ -256,6 +263,31 @@ describe("answerCacheLayer", () => {
         assert.deepStrictEqual(yield* cacheResults, { miss: 2 });
       }),
     ),
+  );
+
+  it.effect(
+    "does not cache an answer a fallback model wrote while the primary was down",
+    () =>
+      withCache((upstreamCalls) =>
+        Effect.gen(function* () {
+          const first = yield* Effect.forkChild(
+            ask(question("Who made Tetris?")),
+          );
+          yield* answerFrom(yield* Queue.take(upstreamCalls), fallbackAnswer);
+          assert.deepStrictEqual(yield* Fiber.join(first), fallbackAnswer);
+
+          const recovered = yield* Effect.forkChild(
+            ask(question("Who made Tetris?")),
+          );
+          yield* answerFrom(yield* Queue.take(upstreamCalls), answer);
+          assert.deepStrictEqual(yield* Fiber.join(recovered), answer);
+          assert.deepStrictEqual(
+            yield* ask(question("Who made Tetris?")),
+            answer,
+          );
+          assert.deepStrictEqual(yield* cacheResults, { miss: 2, hit: 1 });
+        }),
+      ),
   );
 
   it.effect("does not cache a stream that broke partway", () =>

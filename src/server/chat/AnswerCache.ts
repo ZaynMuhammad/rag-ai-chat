@@ -76,11 +76,16 @@ class Asking extends Context.Service<
   { readonly request: ChatRequest; readonly leader: symbol }
 >()("rag-ai-chat/chat/AnswerCache/Asking") {}
 
-const isCompleteAnswer = ({ events, exit }: Progress) =>
-  exit !== undefined &&
-  Exit.isSuccess(exit) &&
-  events.at(-1)?._tag === "Done" &&
-  !events.some((event) => event._tag === "Failed");
+const isCompleteAnswer = ({ events, exit }: Progress, primaryModel: string) => {
+  const last = events.at(-1);
+  return (
+    exit !== undefined &&
+    Exit.isSuccess(exit) &&
+    last?._tag === "Done" &&
+    (last.model === null || last.model === primaryModel) &&
+    !events.some((event) => event._tag === "Failed")
+  );
+};
 
 const replay = (progress: SubscriptionRef.SubscriptionRef<Progress>) =>
   SubscriptionRef.changes(progress).pipe(
@@ -102,6 +107,7 @@ const replay = (progress: SubscriptionRef.SubscriptionRef<Progress>) =>
 
 export interface AnswerCacheOptions {
   readonly planIdentity: string;
+  readonly primaryModel: string;
   readonly capacity: number;
   readonly timeToLive: Duration.Input;
 }
@@ -109,7 +115,7 @@ export interface AnswerCacheOptions {
 export const answerCacheDefaults = {
   capacity: 1000,
   timeToLive: "10 minutes",
-} satisfies Omit<AnswerCacheOptions, "planIdentity">;
+} satisfies Omit<AnswerCacheOptions, "planIdentity" | "primaryModel">;
 
 export const answerCacheLayer = (options: AnswerCacheOptions) =>
   Layer.effect(
@@ -130,7 +136,7 @@ export const answerCacheLayer = (options: AnswerCacheOptions) =>
       ) {
         const { events } = yield* SubscriptionRef.get(flight.progress);
         const finished = { events, exit };
-        if (!isCompleteAnswer(finished)) {
+        if (!isCompleteAnswer(finished, options.primaryModel)) {
           yield* Cache.invalidateWhen(
             answers,
             key,
