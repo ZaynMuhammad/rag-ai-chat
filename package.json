@@ -21,7 +21,8 @@
     "evals:check": "bun scripts/evals/check-eval-set.ts",
     "evals:retrieval": "bun scripts/evals/run-retrieval.ts",
     "evals:answers": "bun scripts/evals/run-answers.ts",
-    "load:steady": "bun scripts/load/steady-chat.ts"
+    "load:steady": "bun scripts/load/steady-chat.ts",
+    "bench:pro": "bun build scripts/pro/bench-signing.ts --target=node --outfile=.next/bench-signing.mjs && node .next/bench-signing.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
