@@ -1,28 +1,14 @@
 import { BunRuntime, BunServices } from "@effect/platform-bun";
-import { Effect, FileSystem, Layer, Schema } from "effect";
+import { Effect, Layer, Schema } from "effect";
 import { CorpusStore } from "../../src/corpus/CorpusStore";
-import {
-  EvalQuestionLine,
-  type EvalQuestion,
-} from "../../src/evals/EvalQuestion";
+import type { EvalQuestion } from "../../src/evals/EvalQuestion";
 import { resolveGold, type GoldResolution } from "../../src/evals/Evidence";
 import { CorpusDatabase } from "../corpus/CorpusDatabase";
-
-const evalDirectory = new URL("../../evals/games/", import.meta.url).pathname;
+import { loadEvalSets } from "./EvalSet";
 
 class EvalSetDrift extends Schema.TaggedError<EvalSetDrift>()("EvalSetDrift", {
   unresolved: Schema.Array(Schema.String),
 }) {}
-
-const loadQuestions = Effect.fn("loadQuestions")(function* (file: string) {
-  const fs = yield* FileSystem.FileSystem;
-  const lines = (yield* fs.readFileString(file))
-    .split("\n")
-    .filter((line) => line.trim() !== "");
-  return yield* Effect.forEach(lines, (line) =>
-    Schema.decodeUnknownEffect(EvalQuestionLine)(line),
-  );
-});
 
 const percent = (part: number, whole: number) =>
   whole === 0 ? "n/a" : `${((100 * part) / whole).toFixed(1)}%`;
@@ -71,17 +57,8 @@ const summarize = (
 };
 
 const program = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem;
   const store = yield* CorpusStore;
-  const files = (yield* fs.readDirectory(evalDirectory))
-    .filter((file) => file.endsWith(".jsonl"))
-    .sort();
-  const sets = yield* Effect.forEach(files, (file) =>
-    Effect.map(loadQuestions(`${evalDirectory}${file}`), (questions) => ({
-      file,
-      questions,
-    })),
-  );
+  const sets = yield* loadEvalSets;
 
   const goldQids = [
     ...new Set(

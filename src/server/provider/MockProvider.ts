@@ -1,8 +1,16 @@
 import { Duration, Effect, Layer, Stream } from "effect";
-import { AiError, LanguageModel, Model, type Response } from "effect/ai";
+import {
+  AiError,
+  LanguageModel,
+  Model,
+  type Prompt,
+  type Response,
+} from "effect/ai";
+import { lastUserText, parseGroundedTurn } from "@/server/chat/GroundedPrompt";
+import { extractiveAnswer } from "./ExtractiveAnswer";
 
 export interface MockProviderOptions {
-  readonly reply?: string;
+  readonly reply?: string | ((prompt: Prompt.Prompt) => string);
   readonly tokenDelay?: Duration.Input;
 }
 
@@ -31,12 +39,12 @@ const finishPart = (outputTokens: number): Response.FinishPartEncoded => ({
 
 const tokenize = (text: string) => text.split(/(?<=\s)/);
 
-const replyingModel = ({
-  reply = defaultReply,
-  tokenDelay = defaultTokenDelay,
-}: MockProviderOptions) => {
+const streamParts = (
+  reply: string,
+  tokenDelay: Duration.Input,
+): Stream.Stream<Response.StreamPartEncoded> => {
   const tokens = tokenize(reply);
-  const streamParts: ReadonlyArray<Response.StreamPartEncoded> = [
+  const parts: ReadonlyArray<Response.StreamPartEncoded> = [
     { type: "text-start", id: textId },
     ...tokens.map((delta) => ({
       type: "text-delta" as const,
@@ -48,21 +56,33 @@ const replyingModel = ({
   ];
   const delayBefore = (part: Response.StreamPartEncoded) =>
     part.type === "text-delta" ? tokenDelay : Duration.zero;
+  return Stream.fromIterable(parts).pipe(
+    Stream.mapEffect((part) =>
+      Effect.sleep(delayBefore(part)).pipe(Effect.as(part)),
+    ),
+  );
+};
 
+const replyingModel = ({
+  reply = defaultReply,
+  tokenDelay = defaultTokenDelay,
+}: MockProviderOptions) => {
+  const replyTo = (prompt: Prompt.Prompt) =>
+    typeof reply === "string" ? reply : reply(prompt);
   return LanguageModel.make({
-    generateText: () =>
-      Effect.succeed([
-        { type: "text", text: reply },
-        finishPart(tokens.length),
-      ]),
-    streamText: () =>
-      Stream.fromIterable(streamParts).pipe(
-        Stream.mapEffect((part) =>
-          Effect.sleep(delayBefore(part)).pipe(Effect.as(part)),
-        ),
-      ),
+    generateText: ({ prompt }) => {
+      const text = replyTo(prompt);
+      return Effect.succeed([
+        { type: "text", text },
+        finishPart(tokenize(text).length),
+      ]);
+    },
+    streamText: ({ prompt }) => streamParts(replyTo(prompt), tokenDelay),
   });
 };
+
+const extractiveReply = (prompt: Prompt.Prompt) =>
+  extractiveAnswer(parseGroundedTurn(lastUserText(prompt)));
 
 const outage = (method: string) =>
   AiError.make({
@@ -84,6 +104,15 @@ export const MockProvider = {
       "mock",
       "mock-replying",
       Layer.effect(LanguageModel.LanguageModel, replyingModel(options)),
+    ),
+  extractive: (options: Omit<MockProviderOptions, "reply"> = {}) =>
+    Model.make(
+      "mock",
+      "mock-extractive",
+      Layer.effect(
+        LanguageModel.LanguageModel,
+        replyingModel({ ...options, reply: extractiveReply }),
+      ),
     ),
   failing: Model.make(
     "mock",
