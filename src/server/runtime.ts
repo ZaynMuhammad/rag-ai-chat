@@ -3,13 +3,16 @@ import { GroundedChat } from "@/server/chat/GroundedChat";
 import { CorpusDatabase } from "@/server/corpus/CorpusDatabase";
 import { AnonymousSessions } from "@/server/gateway/AnonymousSessions";
 import { GameCatalog } from "@/server/games/GameCatalog";
-import { chatPlan, firstTokenDeadline } from "@/server/provider/ChatModels";
+import {
+  chatProviders,
+  firstTokenDeadline,
+} from "@/server/provider/ChatModels";
 import { CircuitBreaker } from "@/server/provider/CircuitBreaker";
 import { Retriever } from "@/server/search/Retriever";
 
 const Chat = Layer.unwrap(
   Effect.gen(function* () {
-    return GroundedChat.layer(yield* chatPlan, yield* firstTokenDeadline);
+    return GroundedChat.layer(yield* chatProviders, yield* firstTokenDeadline);
   }),
 ).pipe(Layer.provide(CircuitBreaker.layer));
 
