@@ -4,6 +4,7 @@ import { articleBlocks } from "../../src/corpus/ArticleBlocks";
 import { buildCatalog } from "../../src/corpus/Catalog";
 import { chunkArticle } from "../../src/corpus/Chunker";
 import { earliestReleases } from "../../src/corpus/ReleaseDate";
+import { commonTerms, countDocuments } from "../../src/corpus/Terms";
 import { CorpusStore } from "../../src/corpus/CorpusStore";
 import {
   StructuredWikipedia,
@@ -61,6 +62,29 @@ const ingestShard = Effect.fn("ingestShard")(function* (
   );
 });
 
+const passagesPerRead = 5000;
+const minimumCommonShare = 0.01;
+
+const countCommonTerms = Effect.gen(function* () {
+  const store = yield* CorpusStore;
+  const frequencies = new Map<string, number>();
+  let documents = 0;
+  let after = 0;
+  for (;;) {
+    const batch = yield* store.passageTextsAfter(after, passagesPerRead);
+    const last = batch.at(-1);
+    if (last === undefined) break;
+    for (const passage of batch) countDocuments(frequencies, passage.text);
+    documents += batch.length;
+    after = last.rowid;
+  }
+  const common = commonTerms(frequencies, documents, minimumCommonShare);
+  yield* store.saveCommonTerms(common);
+  yield* Effect.logInfo(
+    `${common.length} words appear in at least ${minimumCommonShare * 100}% of ${documents} passages`,
+  );
+});
+
 const program = Effect.gen(function* () {
   const store = yield* CorpusStore;
   const wikipedia = yield* StructuredWikipedia;
@@ -101,6 +125,7 @@ const program = Effect.gen(function* () {
   );
 
   yield* store.rebuildSearchIndex;
+  yield* countCommonTerms;
   const stats = yield* store.stats;
   yield* Effect.logInfo(
     `Corpus at ${corpusDatabasePath}: ${stats.gamesWithText}/${stats.games} games with text, ` +

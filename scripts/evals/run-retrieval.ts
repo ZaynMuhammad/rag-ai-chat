@@ -11,13 +11,31 @@ import {
   type Judgement,
   type RetrievedPassage,
 } from "../../src/evals/RetrievalMetrics";
-import { Retriever } from "../../src/server/search/Retriever";
+import {
+  defaultRetrieverOptions,
+  Retriever,
+  type RetrieverOptions,
+} from "../../src/server/search/Retriever";
 import { CorpusDatabase } from "../corpus/CorpusDatabase";
 import { evalDirectory, loadEvalSets } from "./EvalSet";
 
 const depth = 20;
-const headingWeights = [1, 2, 4] as const;
-const defaultHeadingWeight = 2;
+const variants: ReadonlyArray<{
+  readonly name: string;
+  readonly options: RetrieverOptions;
+}> = [
+  {
+    name: "bm25",
+    options: { ...defaultRetrieverOptions, commonTermShare: null },
+  },
+  ...[0.2, 0.1, 0.05, 0.02].map((share) => ({
+    name: `bm25, require a word in <${share * 100}% of passages`,
+    options: { ...defaultRetrieverOptions, commonTermShare: share },
+  })),
+];
+const isDefault = (options: RetrieverOptions) =>
+  options.headingWeight === defaultRetrieverOptions.headingWeight &&
+  options.commonTermShare === defaultRetrieverOptions.commonTermShare;
 
 interface Scored {
   readonly question: EvalQuestion;
@@ -103,9 +121,9 @@ const program = Effect.gen(function* () {
     },
   }));
 
-  const runs = yield* Effect.forEach(headingWeights, (headingWeight) =>
+  const runs = yield* Effect.forEach(variants, ({ name, options }) =>
     Effect.gen(function* () {
-      const retriever = yield* Retriever.make({ headingWeight });
+      const retriever = yield* Retriever.make(options);
       const scored = yield* Effect.forEach(judged, ({ question, judgement }) =>
         Effect.gen(function* () {
           const start = yield* Clock.currentTimeNanos;
@@ -118,17 +136,17 @@ const program = Effect.gen(function* () {
           return { question, ranking, judgement, millis };
         }),
       );
-      return { retriever: "bm25", headingWeight, results: breakdown(scored) };
+      return { variant: name, options, results: breakdown(scored) };
     }),
   );
 
   console.table(
     runs.map((run) => ({
-      headingWeight: run.headingWeight,
+      variant: run.variant,
       ...run.results["all"],
     })),
   );
-  const best = runs.find((run) => run.headingWeight === defaultHeadingWeight);
+  const best = runs.find((run) => isDefault(run.options));
   if (best !== undefined) {
     console.table(
       Object.entries(best.results).map(([group, values]) => ({

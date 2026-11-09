@@ -57,6 +57,25 @@ const search = (query: string, scope: Scope = {}) =>
     retriever.search({ query, scope, limit: 5 }),
   ).pipe(Effect.map((passages) => passages.map((passage) => passage.id)));
 
+describe("matchExpression", () => {
+  it("requires a distinctive word, while still ranking by every word", () => {
+    assert.strictEqual(
+      matchExpression(
+        ["tetris", "game", "released"],
+        new Set(["game", "released"]),
+      ),
+      '("tetris") AND ("tetris" OR "game" OR "released")',
+    );
+  });
+
+  it("falls back to any word when every word is common", () => {
+    assert.strictEqual(
+      matchExpression(["game", "released"], new Set(["game", "released"])),
+      '"game" OR "released"',
+    );
+  });
+});
+
 describe("searchTerms", () => {
   it("drops question words and punctuation, folds case, and keeps years", () => {
     assert.deepStrictEqual(

@@ -96,6 +96,15 @@ export const migrations = {
       )
     `;
   }),
+  "0004_common_terms": Effect.gen(function* () {
+    const sql = yield* SqlClient.SqlClient;
+    yield* sql`
+      CREATE TABLE common_terms (
+        term TEXT PRIMARY KEY,
+        documents INTEGER NOT NULL
+      )
+    `;
+  }),
 };
 
 const rowsPerStatement = 500;
@@ -132,6 +141,13 @@ export class PlacedGameRow extends Schema.Class<PlacedGameRow>(
   longitude: Schema.Number,
 }) {}
 
+export class PassageText extends Schema.Class<PassageText>(
+  "rag-ai-chat/corpus/PassageText",
+)({
+  rowid: Schema.Number,
+  text: Schema.String,
+}) {}
+
 export class CorpusStats extends Schema.Class<CorpusStats>(
   "rag-ai-chat/corpus/CorpusStats",
 )({
@@ -148,6 +164,16 @@ export class CorpusStore extends Context.Service<
     saveCatalog(games: ReadonlyArray<CatalogGame>): Effect.Effect<void>;
     saveReleases(releases: ReadonlyArray<Release>): Effect.Effect<void>;
     readonly rebuildSearchIndex: Effect.Effect<void>;
+    passageTextsAfter(
+      rowid: number,
+      limit: number,
+    ): Effect.Effect<ReadonlyArray<PassageText>>;
+    saveCommonTerms(
+      terms: ReadonlyArray<{
+        readonly term: string;
+        readonly documents: number;
+      }>,
+    ): Effect.Effect<void>;
     readonly ingestedShards: Effect.Effect<ReadonlySet<string>>;
     readonly gameTitles: Effect.Effect<ReadonlyArray<GameTitle>>;
     passagesOf(
@@ -229,6 +255,34 @@ export class CorpusStore extends Context.Service<
         Effect.asVoid,
         Effect.orDie,
         Effect.withSpan("CorpusStore.rebuildSearchIndex"),
+      );
+
+      const passageTextsAfter = Effect.fn("CorpusStore.passageTextsAfter")(
+        function* (rowid: number, limit: number) {
+          return yield* SqlSchema.findAll({
+            Request: Schema.Void,
+            Result: PassageText,
+            execute: () => sql`
+              SELECT rowid, heading || ' ' || text AS text FROM passages
+              WHERE rowid > ${rowid} ORDER BY rowid LIMIT ${limit}
+            `,
+          })(undefined);
+        },
+        Effect.orDie,
+      );
+
+      const saveCommonTerms = Effect.fn("CorpusStore.saveCommonTerms")(
+        function* (
+          terms: ReadonlyArray<{
+            readonly term: string;
+            readonly documents: number;
+          }>,
+        ) {
+          yield* sql`DELETE FROM common_terms`;
+          yield* insertInBatches("common_terms", terms);
+        },
+        sql.withTransaction,
+        Effect.orDie,
       );
 
       const ingestedShards = SqlSchema.findAll({
@@ -372,6 +426,8 @@ export class CorpusStore extends Context.Service<
         saveCatalog,
         saveReleases,
         rebuildSearchIndex,
+        passageTextsAfter,
+        saveCommonTerms,
         ingestedShards,
         saveShard,
         stats,
