@@ -51,7 +51,7 @@ function Answer({ message }: { message: UiMessage }) {
               key={index}
               href={passageHref(passage)}
               title={`${passage.title}: ${shortHeading(passage)}`}
-              className="mx-0.5 rounded bg-accent/15 px-1 align-super text-[0.7em] font-semibold text-accent hover:bg-accent/25"
+              className="mx-0.5 rounded bg-primary/15 px-1 align-super text-[0.7em] font-semibold text-primary hover:bg-primary/25"
             >
               {segment.number}
             </Link>
@@ -65,7 +65,7 @@ function Answer({ message }: { message: UiMessage }) {
 function Sources({ passages }: { passages: ReadonlyArray<RetrievedPassage> }) {
   if (passages.length === 0) return null;
   return (
-    <details className="mt-3 border-t border-line pt-2 text-xs text-muted">
+    <details className="mt-3 border-t border-border pt-2 text-xs text-muted-foreground">
       <summary className="cursor-pointer select-none">
         {passages.length} passages retrieved
       </summary>
@@ -76,8 +76,10 @@ function Sources({ passages }: { passages: ReadonlyArray<RetrievedPassage> }) {
               {index + 1}
             </span>
             <Link href={passageHref(passage)} className="hover:underline">
-              <span className="font-medium text-ink">{passage.title}</span> ·{" "}
-              {shortHeading(passage)} · {formatReleased(passage.released)}
+              <span className="font-medium text-foreground">
+                {passage.title}
+              </span>{" "}
+              · {shortHeading(passage)} · {formatReleased(passage.released)}
             </Link>
           </li>
         ))}
@@ -95,7 +97,7 @@ function Bubble({
 }) {
   if (message.role === "user") {
     return (
-      <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-ink px-4 py-2 text-sm whitespace-pre-wrap text-paper">
+      <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-foreground px-4 py-2 text-sm whitespace-pre-wrap text-background">
         {message.content}
       </div>
     );
@@ -105,16 +107,16 @@ function Bubble({
       className={`max-w-[92%] rounded-2xl rounded-bl-sm border px-4 py-3 text-sm ${
         message.failed
           ? "border-red-400/60 bg-red-500/10"
-          : "border-line bg-card"
+          : "border-border bg-card"
       }`}
     >
       {message.content === "" && pending ? (
-        <span className="text-muted">Searching the articles…</span>
+        <span className="text-muted-foreground">Searching the articles…</span>
       ) : (
         <Answer message={message} />
       )}
       {message.model !== null && (
-        <p className="mt-2 text-[11px] text-muted">
+        <p className="mt-2 text-[11px] text-muted-foreground">
           Answered by <code>{message.model}</code>
           {message.model.startsWith("mock") && " (quotes the passages, no LLM)"}
         </p>
@@ -252,7 +254,7 @@ export function ChatPanel({
       <div className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto">
         <div className="flex flex-col gap-4 p-4">
           {messages.length === 0 ? (
-            <div className="py-6 text-sm text-muted">
+            <div className="py-6 text-sm text-muted-foreground">
               <p>
                 Answers come only from the retrieved Wikipedia passages, with
                 numbered citations.
@@ -263,7 +265,7 @@ export function ChatPanel({
                     key={suggestion}
                     type="button"
                     onClick={() => void send(suggestion)}
-                    className="rounded-full border border-line px-3 py-1 text-xs hover:border-accent hover:text-accent"
+                    className="rounded-full border border-border px-3 py-1 text-xs hover:border-primary hover:text-primary"
                   >
                     {suggestion}
                   </button>
@@ -281,7 +283,7 @@ export function ChatPanel({
           )}
         </div>
       </div>
-      <form onSubmit={submit} className="border-t border-line p-3">
+      <form onSubmit={submit} className="border-t border-border p-3">
         <div className="flex items-end gap-2">
           <textarea
             value={draft}
@@ -293,13 +295,13 @@ export function ChatPanel({
             maxLength={2000}
             placeholder={placeholder}
             aria-label="Question"
-            className="max-h-40 min-h-10 flex-1 resize-none rounded-lg border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-accent"
+            className="max-h-40 min-h-10 flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
           />
           {streaming ? (
             <button
               type="button"
               onClick={() => abortRef.current?.abort()}
-              className="h-10 rounded-lg border border-line px-4 text-sm font-medium"
+              className="h-10 rounded-lg border border-border px-4 text-sm font-medium"
             >
               Stop
             </button>
@@ -307,7 +309,7 @@ export function ChatPanel({
             <button
               type="submit"
               disabled={draft.trim() === ""}
-              className="h-10 rounded-lg bg-accent px-4 text-sm font-medium text-white disabled:opacity-40"
+              className="h-10 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-40"
             >
               Ask
             </button>

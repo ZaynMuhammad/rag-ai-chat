@@ -18,7 +18,7 @@ import {
 import { runAtRequestTime } from "@/app/run";
 
 const field =
-  "h-9 rounded-md border border-line bg-card px-2 text-sm outline-none focus:border-accent";
+  "h-9 rounded-md border border-border bg-card px-2 text-sm outline-none focus:border-primary";
 
 function Filters({
   query,
@@ -29,13 +29,13 @@ function Filters({
 }) {
   return (
     <form className="flex flex-wrap items-end gap-3" action="/">
-      <label className="flex flex-col gap-1 text-xs text-muted">
+      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
         Region
         <select name="area" defaultValue={areaValue(query)} className={field}>
           <AreaOptions subRegions={subRegions} />
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-xs text-muted">
+      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
         Released from
         <input
           name="from"
@@ -47,7 +47,7 @@ function Filters({
           className={`${field} w-24`}
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-muted">
+      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
         to
         <input
           name="to"
@@ -59,7 +59,7 @@ function Filters({
           className={`${field} w-24`}
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-muted">
+      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
         Sort
         <select name="sort" defaultValue={query.sort} className={field}>
           <option value="newest">Newest first</option>
@@ -67,7 +67,7 @@ function Filters({
           <option value="title">Title A–Z</option>
         </select>
       </label>
-      <label className="flex min-w-48 flex-1 flex-col gap-1 text-xs text-muted">
+      <label className="flex min-w-48 flex-1 flex-col gap-1 text-xs text-muted-foreground">
         Title contains
         <input
           name="title"
@@ -79,7 +79,7 @@ function Filters({
       </label>
       <button
         type="submit"
-        className="h-9 rounded-md bg-accent px-4 text-sm font-medium text-white"
+        className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
       >
         Apply
       </button>
@@ -97,12 +97,12 @@ function Results({ page, query }: { page: BrowsePage; query: BrowseQuery }) {
   return (
     <section className="mt-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm text-muted">
+        <p className="text-sm text-muted-foreground">
           {page.total.toLocaleString("en")} games with article text
         </p>
         <Link
           href={`/chat${scope}`}
-          className="text-sm font-medium text-accent hover:underline"
+          className="text-sm font-medium text-primary hover:underline"
         >
           Ask about these games →
         </Link>
@@ -112,19 +112,19 @@ function Results({ page, query }: { page: BrowsePage; query: BrowseQuery }) {
           <li key={game.qid}>
             <Link
               href={`/games/${game.qid}`}
-              className="block h-full rounded-lg border border-line bg-card p-4 hover:border-accent"
+              className="block h-full rounded-lg border border-border bg-card p-4 hover:border-primary"
             >
-              <p className="text-xs font-medium text-accent">
+              <p className="text-xs font-medium text-primary">
                 {formatReleased(game.released)}
               </p>
               <h2 className="mt-1 font-semibold leading-snug break-words">
                 {game.title}
               </h2>
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {game.countries.join(", ")} · {game.subRegions.join(", ")}
               </p>
               {game.description !== null && (
-                <p className="mt-2 line-clamp-2 text-sm text-muted">
+                <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                   {game.description}
                 </p>
               )}
@@ -133,7 +133,7 @@ function Results({ page, query }: { page: BrowsePage; query: BrowseQuery }) {
         ))}
       </ul>
       {page.games.length === 0 && (
-        <p className="mt-6 text-sm text-muted">
+        <p className="mt-6 text-sm text-muted-foreground">
           No games match. Widen the years or pick another region.
         </p>
       )}
@@ -141,20 +141,20 @@ function Results({ page, query }: { page: BrowsePage; query: BrowseQuery }) {
         {page.page > 1 ? (
           <Link
             href={`/${queryString({ ...query, page: page.page - 1 })}`}
-            className="hover:text-accent"
+            className="hover:text-primary"
           >
             ← Previous
           </Link>
         ) : (
           <span />
         )}
-        <span className="text-muted">
+        <span className="text-muted-foreground">
           Page {page.page} of {page.pageCount.toLocaleString("en")}
         </span>
         {page.page < page.pageCount ? (
           <Link
             href={`/${queryString({ ...query, page: page.page + 1 })}`}
-            className="hover:text-accent"
+            className="hover:text-primary"
           >
             Next →
           </Link>
@@ -191,14 +191,16 @@ export default function Home({ searchParams }: PageProps<"/">) {
       <h1 className="text-2xl font-semibold tracking-tight">
         Video games on Wikipedia, by region and release date
       </h1>
-      <p className="mt-2 max-w-2xl text-sm text-muted">
+      <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         26,000 games placed by their country of origin, sorted by when they came
         out. Open one to read its article, or ask a question and get an answer
         that cites the passages it used.
       </p>
       <div className="mt-6">
         <Suspense
-          fallback={<p className="text-sm text-muted">Loading games…</p>}
+          fallback={
+            <p className="text-sm text-muted-foreground">Loading games…</p>
+          }
         >
           <Browse searchParams={searchParams} />
         </Suspense>
