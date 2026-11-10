@@ -86,6 +86,18 @@ bun run build && bun run start &
 LOAD_BASE_URL=http://localhost:3000 LOAD_RPS=4 LOAD_SECONDS=60 bun run load:steady
 ```
 
+The Go load generator in `loadgen/` sends the same chats from one static binary (`bun run load:go` builds it):
+
+```sh
+bun run load:go steady -url http://localhost:3000 -rate 4 -duration 60s   # same traffic as load:steady
+bun run load:go steady -url http://localhost:3000 -rate 4 -poisson -seed 7   # exponential gaps, reproducible
+bun run load:go spike -url http://localhost:3000 -rate 4 -multiplier 5 -spike-at 20s -spike-for 10s
+bun run load:go zipf -url http://localhost:3000 -rate 4 -s 1.1 -seed 7   # question k is asked with weight 1/k^s
+bun run load:go steady -url http://localhost:3000 -json > run.json   # summary and 5 s buckets as JSON
+```
+
+It is an open-model generator: every chat fires at its scheduled time whether or not earlier ones have finished, and time to first token (the first `Delta` event) and total time are measured from that scheduled time. That corrects for coordinated omission, where a stalled server or a full client quietly delays sends and hides the wait. The report prints the naive from-send timings and the send lag next to the corrected ones. `-max-inflight N` caps concurrency like a fixed connection pool, which is where the two diverge. Errors are split into HTTP status, `Failed` events, timeouts and transport errors. Percentiles come from sorting every sample, which is exact and cheap for a few thousand chats. Each session token carries at most 8 chats a minute, under the gateway's limit of 10, and a new one is minted only when every token is spent. The outage scenario is `steady` against a server started with `MOCK_PRIMARY` from the failover change; the `models` line shows which model answered.
+
 ## Checks
 
 `bun run check` runs Prettier, ESLint (strict type-checked rules, plus project rules: no comments, no reading identifying headers, no real time in tests), `tsc` with the Effect language service, and the Vitest suite. CI runs the same checks plus `next build` on every push and pull request. Tests use an in-memory SQLite corpus, `TestClock`, and the mock provider, and they fail if anything tries to reach the network.
