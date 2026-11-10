@@ -20,7 +20,10 @@
     "evals:build": "bun scripts/evals/build-eval-set.ts",
     "evals:check": "bun scripts/evals/check-eval-set.ts",
     "evals:retrieval": "bun scripts/evals/run-retrieval.ts",
-    "load:steady": "bun scripts/load/steady-chat.ts"
+    "load:steady": "bun scripts/load/steady-chat.ts",
+    "load:go": "cd loadgen && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o bin/loadgen ./cmd/loadgen && cd .. && loadgen/bin/loadgen",
+    "lint:go": "cd loadgen && CGO_ENABLED=0 golangci-lint run ./... && golangci-lint fmt --diff",
+    "test:go": "cd loadgen && go test -race ./..."
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
