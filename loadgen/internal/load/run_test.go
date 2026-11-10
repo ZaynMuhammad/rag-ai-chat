@@ -1,6 +1,7 @@
 package load
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"runtime"
@@ -75,7 +76,7 @@ func checkStalledServer(t *testing.T, maxInFlight int, corrected []time.Duration
 
 func TestTimeoutsAreCountedAndLeaveNoGoroutines(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		before := runtime.NumGoroutine()
+		before := bubbleGoroutines()
 		gateway := newFakeGateway(t, func(w http.ResponseWriter, r *http.Request) {
 			writeEvent(w, `{"_tag":"Citations","passages":[]}`)
 			<-r.Context().Done()
@@ -100,7 +101,7 @@ func TestTimeoutsAreCountedAndLeaveNoGoroutines(t *testing.T) {
 
 func TestCancellingTheRunStopsSendingAndLeavesNoGoroutines(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		before := runtime.NumGoroutine()
+		before := bubbleGoroutines()
 		gateway := newFakeGateway(t, func(_ http.ResponseWriter, r *http.Request) {
 			<-r.Context().Done()
 		})
@@ -174,8 +175,19 @@ func assertNoLeak(t *testing.T, gateway *fakeGateway, before int) {
 	t.Helper()
 	gateway.close()
 	synctest.Wait()
-	if after := runtime.NumGoroutine(); after != before {
-		t.Fatalf("%d goroutines before the run, %d after", before, after)
+	if after := bubbleGoroutines(); after != before {
+		t.Fatalf("%d goroutines in the bubble before the run, %d after", before, after)
+	}
+}
+
+func bubbleGoroutines() int {
+	stacks := make([]byte, 1<<16)
+	for {
+		size := runtime.Stack(stacks, true)
+		if size < len(stacks) {
+			return bytes.Count(stacks[:size], []byte(", synctest bubble "))
+		}
+		stacks = make([]byte, 2*len(stacks))
 	}
 }
 
