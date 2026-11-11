@@ -14,11 +14,22 @@ export interface FixtureGame {
     readonly region: string;
     readonly subRegion: string;
   }>;
+  readonly studios?: ReadonlyArray<FixtureStudio>;
+  readonly genres?: ReadonlyArray<string>;
   readonly passages: ReadonlyArray<{
     readonly heading: string;
     readonly text: string;
   }>;
 }
+
+export interface FixtureStudio {
+  readonly developer: string;
+  readonly placeQid: string;
+  readonly place: string;
+}
+
+export const placeQidOf = (iso2: string) =>
+  `Q${iso2.charCodeAt(0)}${iso2.charCodeAt(1)}`;
 
 export const japan = {
   iso2: "JP",
@@ -60,7 +71,7 @@ const insertGame = Effect.fn(function* (game: FixtureGame) {
   for (const origin of game.origins) {
     yield* sql`INSERT INTO origins ${sql.insert({
       game_qid: game.qid,
-      place_qid: `place-${origin.iso2}`,
+      place_qid: placeQidOf(origin.iso2),
       place_label: origin.country,
       iso2: origin.iso2,
       country: origin.country,
@@ -69,6 +80,24 @@ const insertGame = Effect.fn(function* (game: FixtureGame) {
       latitude: 0,
       longitude: 0,
       source: "country_of_origin",
+    })}`;
+  }
+  for (const studio of game.studios ?? []) {
+    yield* sql`INSERT INTO studios ${sql.insert({
+      game_qid: game.qid,
+      developer_qid: `developer-${studio.developer}`,
+      developer_label: studio.developer,
+      place_qid: studio.placeQid,
+      place_label: studio.place,
+      latitude: 0,
+      longitude: 0,
+    })}`;
+  }
+  for (const genre of game.genres ?? []) {
+    yield* sql`INSERT INTO genres ${sql.insert({
+      game_qid: game.qid,
+      genre_qid: `genre-${genre}`,
+      label: genre,
     })}`;
   }
   for (const [ordinal, passage] of game.passages.entries()) {
