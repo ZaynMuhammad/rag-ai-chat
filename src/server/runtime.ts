@@ -11,36 +11,31 @@ import {
   observedChat,
   observedRetrieval,
 } from "@/server/metrics/GatewayMetrics";
+import { ProCredentials } from "@/server/pro/ProCredentials";
 import {
-  chatPlan,
-  chatPlanIdentity,
-  chatPrimaryModel,
+  chatProviders,
+  firstTokenDeadline,
 } from "@/server/provider/ChatModels";
+import { CircuitBreaker } from "@/server/provider/CircuitBreaker";
 import { Retriever } from "@/server/search/Retriever";
 
 const Chat = Layer.unwrap(
   Effect.gen(function* () {
-    const plan = yield* chatPlan;
-    const planIdentity = yield* chatPlanIdentity;
-    const primaryModel = yield* chatPrimaryModel;
     return observedChat.pipe(
+      Layer.provide(answerCacheLayer(answerCacheDefaults)),
       Layer.provide(
-        answerCacheLayer({
-          ...answerCacheDefaults,
-          planIdentity,
-          primaryModel,
-        }),
+        GroundedChat.layer(yield* chatProviders, yield* firstTokenDeadline),
       ),
-      Layer.provide(GroundedChat.layer(plan)),
     );
   }),
-);
+).pipe(Layer.provide(CircuitBreaker.layer));
 
 const AppLayer = Layer.mergeAll(
   GameCatalog.layer,
   Chat,
-  AnonymousSessions.layer,
+  ProCredentials.layer,
 ).pipe(
+  Layer.provideMerge(AnonymousSessions.layer),
   Layer.provideMerge(observedRetrieval.pipe(Layer.provide(Retriever.layer))),
   Layer.provide(CorpusDatabase),
   Layer.orDie,

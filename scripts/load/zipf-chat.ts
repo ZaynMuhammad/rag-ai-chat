@@ -1,4 +1,7 @@
-import { evalQuestions, runChatLoad } from "./ChatLoad";
+import { evalQuestions, report, runLoad, steadyArrivals } from "./LoadRun";
+
+const ratePerSecond = Number(process.env["LOAD_RPS"] ?? "4");
+const durationSeconds = Number(process.env["LOAD_SECONDS"] ?? "60");
 
 const exponent = Number(process.env["LOAD_ZIPF_EXPONENT"] ?? "1");
 const seed = Number(process.env["LOAD_SEED"] ?? "1");
@@ -26,4 +29,5 @@ const pick = () => {
   return evalQuestions[rank === -1 ? evalQuestions.length - 1 : rank] ?? "";
 };
 
-await runChatLoad(`zipf s=${exponent} seed=${seed}`, pick);
+console.log(`zipf s=${exponent} seed=${seed}`);
+report(await runLoad(steadyArrivals(ratePerSecond, durationSeconds), pick));

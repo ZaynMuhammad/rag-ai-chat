@@ -1,12 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-import {
-  ConfigProvider,
-  Duration,
-  Effect,
-  ExecutionPlan,
-  Layer,
-  Metric,
-} from "effect";
+import { ConfigProvider, Duration, Effect, Layer, Metric } from "effect";
 import { RateLimiter } from "effect/persistence";
 import { answerCacheLayer } from "@/server/chat/AnswerCache";
 import { GroundedChat } from "@/server/chat/GroundedChat";
@@ -16,6 +9,7 @@ import {
   type SessionPolicy,
 } from "@/server/gateway/AnonymousSessions";
 import { serveChat } from "@/server/gateway/ChatGateway";
+import { CircuitBreaker } from "@/server/provider/CircuitBreaker";
 import { MockProvider } from "@/server/provider/MockProvider";
 import { Retriever } from "@/server/search/Retriever";
 import { observedChat, observedRetrieval } from "./GatewayMetrics";
@@ -47,18 +41,21 @@ const gateway = Layer.mergeAll(
   observedChat.pipe(
     Layer.provide(
       answerCacheLayer({
-        planIdentity: "mock-extractive",
-        primaryModel: "mock-extractive",
         capacity: 10,
         timeToLive: "10 minutes",
       }),
     ),
     Layer.provide(
       GroundedChat.layer(
-        ExecutionPlan.make({
-          provide: MockProvider.extractive({ tokenDelay: Duration.zero }),
-        }),
-      ),
+        [
+          {
+            id: "mock-extractive",
+            provider: "mock",
+            model: MockProvider.extractive({ tokenDelay: Duration.zero }),
+          },
+        ],
+        Duration.seconds(2),
+      ).pipe(Layer.provide(CircuitBreaker.layer)),
     ),
   ),
   Layer.effect(AnonymousSessions, AnonymousSessions.make(policy)).pipe(

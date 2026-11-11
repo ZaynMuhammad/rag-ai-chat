@@ -19,8 +19,9 @@ export const serveChat = Effect.fn("ChatGateway.serveChat")(function* (
   }
   const sessions = yield* AnonymousSessions;
   const chat = yield* GroundedChat;
-  return yield* sessions.admitChat(token).pipe(
-    Effect.andThen(() => toSseBody(chat.stream(decoded.value))),
+  return yield* chat.stream(decoded.value).pipe(
+    Effect.tap(() => sessions.admitChat(token)),
+    Effect.flatMap(toSseBody),
     Effect.map(
       (sse) =>
         new Response(sse, {
@@ -30,6 +31,12 @@ export const serveChat = Effect.fn("ChatGateway.serveChat")(function* (
             "x-accel-buffering": "no",
           },
         }),
+    ),
+    Effect.catchTag("UnknownModel", () =>
+      Effect.as(
+        countChat("invalid"),
+        Response.json({ message: "Unknown model" }, { status: 400 }),
+      ),
     ),
     Effect.catch((error) =>
       Effect.as(

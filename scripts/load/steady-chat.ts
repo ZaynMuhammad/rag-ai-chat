@@ -1,6 +1,6 @@
-import { evalQuestions, runChatLoad } from "./ChatLoad";
+import { report, runLoad, steadyArrivals } from "./LoadRun";
 
-await runChatLoad(
-  "steady",
-  (index) => evalQuestions[index % evalQuestions.length] ?? "",
-);
+const ratePerSecond = Number(process.env["LOAD_RPS"] ?? "4");
+const durationSeconds = Number(process.env["LOAD_SECONDS"] ?? "60");
+
+report(await runLoad(steadyArrivals(ratePerSecond, durationSeconds)));

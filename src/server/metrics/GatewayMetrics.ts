@@ -74,7 +74,11 @@ export const observedChat = Layer.effect(
   GroundedChat,
   Effect.map(GroundedChat, (chat) =>
     GroundedChat.of({
-      stream: (request) => Stream.unwrap(observeChat(chat.stream(request))),
+      models: chat.models,
+      stream: (request) =>
+        Effect.map(chat.stream(request), (events) =>
+          Stream.unwrap(observeChat(events)),
+        ),
     }),
   ),
 );

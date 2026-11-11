@@ -4,7 +4,6 @@ import {
   Duration,
   Effect,
   Exit,
-  ExecutionPlan,
   Fiber,
   Layer,
   Metric,
@@ -14,6 +13,7 @@ import {
 } from "effect";
 import { TestClock } from "effect/testing";
 import { corpusFixture, sovietUnion } from "@/server/corpus/CorpusFixture";
+import { CircuitBreaker } from "@/server/provider/CircuitBreaker";
 import { MockProvider } from "@/server/provider/MockProvider";
 import { Retriever } from "@/server/search/Retriever";
 import {
@@ -44,7 +44,7 @@ const fixture = corpusFixture([
 const keyParts: AnswerKeyParts = {
   secret: new Uint8Array(32),
   corpusVersion: "passages:1;revisions:1000",
-  planIdentity: "mock-extractive",
+  models: ["mock-extractive", "mock-fallback"],
 };
 
 const question = (
@@ -52,8 +52,11 @@ const question = (
   scope: ChatRequest["scope"] = {},
 ): ChatRequest => ({ messages: [{ role: "user", content }], scope });
 
-const keyOf = (request: ChatRequest, parts: AnswerKeyParts = keyParts) =>
-  Option.getOrThrow(answerKey(parts, request));
+const keyOf = (
+  request: ChatRequest,
+  parts: AnswerKeyParts = keyParts,
+  model = "mock-extractive",
+) => Option.getOrThrow(answerKey(parts, model, request));
 
 const followUp: ChatRequest = {
   messages: [
@@ -87,8 +90,6 @@ const fallbackAnswer: ReadonlyArray<ChatEvent> = [
 type Feed = Queue.Queue<ChatEvent, Cause.Done>;
 
 const options: AnswerCacheOptions = {
-  planIdentity: "mock-extractive",
-  primaryModel: "mock-extractive",
   capacity: 10,
   timeToLive: "10 minutes",
 };
@@ -104,13 +105,19 @@ const withCache = <A, E>(
     const scriptedUpstream = Layer.succeed(
       GroundedChat,
       GroundedChat.of({
+        models: [
+          { id: "mock-extractive", provider: "mock" },
+          { id: "mock-fallback", provider: "mock" },
+        ],
         stream: () =>
-          Stream.unwrap(
-            Effect.gen(function* () {
-              const feed = yield* Queue.unbounded<ChatEvent, Cause.Done>();
-              yield* Queue.offer(upstreamCalls, feed);
-              return Stream.fromQueue(feed);
-            }),
+          Effect.succeed(
+            Stream.unwrap(
+              Effect.gen(function* () {
+                const feed = yield* Queue.unbounded<ChatEvent, Cause.Done>();
+                yield* Queue.offer(upstreamCalls, feed);
+                return Stream.fromQueue(feed);
+              }),
+            ),
           ),
       }),
     );
@@ -126,19 +133,30 @@ const withCache = <A, E>(
 
 const ask = (request: ChatRequest) =>
   Effect.flatMap(GroundedChat, (chat) =>
-    Stream.runCollect(chat.stream(request)),
+    Effect.flatMap(chat.stream(request), Stream.runCollect),
   );
 
 const askInBackground = (request: ChatRequest) =>
   Effect.gen(function* () {
     const seen = yield* Queue.unbounded<ChatEvent>();
     const chat = yield* GroundedChat;
-    const fiber = yield* chat.stream(request).pipe(
+    const fiber = yield* (yield* chat.stream(request)).pipe(
       Stream.runForEach((event) => Queue.offer(seen, event)),
       Effect.forkChild,
     );
     return { seen, fiber };
   });
+
+const realChat = GroundedChat.layer(
+  [
+    {
+      id: "mock-extractive",
+      provider: "mock",
+      model: MockProvider.extractive({ tokenDelay: Duration.zero }),
+    },
+  ],
+  Duration.seconds(2),
+).pipe(Layer.provide(CircuitBreaker.layer));
 
 const answerFrom = (feed: Feed, events: ReadonlyArray<ChatEvent>) =>
   Effect.andThen(Queue.offerAll(feed, events), Queue.end(feed));
@@ -189,7 +207,7 @@ describe("normalizeQuestion", () => {
 });
 
 describe("answerKey", () => {
-  it("separates meanings, scopes, model plans, and corpus versions", () => {
+  it("separates meanings, scopes, models, and corpus versions", () => {
     const base = question("games by Nintendo", { region: "Asia" });
     const keys = [
       keyOf(base),
@@ -197,7 +215,11 @@ describe("answerKey", () => {
       keyOf(question("games by Nintendo", { region: "Europe" })),
       keyOf(question("games by Nintendo", { region: "Asia", from: 1990 })),
       keyOf(question("games by Nintendo")),
-      keyOf(base, { ...keyParts, planIdentity: "anthropic:claude-haiku-5-5" }),
+      keyOf(base, keyParts, "mock-fallback"),
+      keyOf(base, {
+        ...keyParts,
+        models: ["claude-haiku-5-5", "mock-extractive"],
+      }),
       keyOf(base, { ...keyParts, corpusVersion: "passages:2;revisions:1000" }),
     ];
     assert.strictEqual(new Set(keys).size, keys.length);
@@ -224,7 +246,9 @@ describe("answerKey", () => {
   });
 
   it("leaves follow-up turns uncached", () => {
-    assert.isTrue(Option.isNone(answerKey(keyParts, followUp)));
+    assert.isTrue(
+      Option.isNone(answerKey(keyParts, "mock-extractive", followUp)),
+    );
   });
 });
 
@@ -288,6 +312,29 @@ describe("answerCacheLayer", () => {
           assert.deepStrictEqual(yield* cacheResults, { miss: 2, hit: 1 });
         }),
       ),
+  );
+
+  it.effect("keeps answers apart when a chat picks another model", () =>
+    withCache((upstreamCalls) =>
+      Effect.gen(function* () {
+        const picked = {
+          ...question("Who made Tetris?"),
+          model: "mock-fallback",
+        };
+        const first = yield* Effect.forkChild(ask(picked));
+        yield* answerFrom(yield* Queue.take(upstreamCalls), fallbackAnswer);
+        assert.deepStrictEqual(yield* Fiber.join(first), fallbackAnswer);
+
+        const byDefault = yield* Effect.forkChild(
+          ask(question("Who made Tetris?")),
+        );
+        yield* answerFrom(yield* Queue.take(upstreamCalls), answer);
+        assert.deepStrictEqual(yield* Fiber.join(byDefault), answer);
+
+        assert.deepStrictEqual(yield* ask(picked), fallbackAnswer);
+        assert.deepStrictEqual(yield* cacheResults, { miss: 2, hit: 1 });
+      }),
+    ),
   );
 
   it.effect("does not cache a stream that broke partway", () =>
@@ -438,11 +485,7 @@ describe("answerCacheLayer", () => {
     Effect.gen(function* () {
       const uncached = yield* ask(question("Who created Tetris?")).pipe(
         Effect.provide(
-          GroundedChat.layer(
-            ExecutionPlan.make({
-              provide: MockProvider.extractive({ tokenDelay: Duration.zero }),
-            }),
-          ).pipe(Layer.provide(Retriever.layer), Layer.provide(fixture)),
+          realChat.pipe(Layer.provide(Retriever.layer), Layer.provide(fixture)),
         ),
       );
       const cached = yield* Effect.gen(function* () {
@@ -452,15 +495,7 @@ describe("answerCacheLayer", () => {
       }).pipe(
         Effect.provide(
           answerCacheLayer(options).pipe(
-            Layer.provide(
-              GroundedChat.layer(
-                ExecutionPlan.make({
-                  provide: MockProvider.extractive({
-                    tokenDelay: Duration.zero,
-                  }),
-                }),
-              ),
-            ),
+            Layer.provide(realChat),
             Layer.provide(Retriever.layer),
             Layer.provide(fixture),
           ),
