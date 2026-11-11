@@ -14,6 +14,7 @@ import {
   HttpClientResponse,
 } from "effect/http";
 import type { ReleaseDateRow } from "./ReleaseDate";
+import type { GenreRow, StudioRow } from "./Studios";
 
 const endpoint = "https://query.wikidata.org/sparql";
 const userAgent =
@@ -44,6 +45,22 @@ const ReleaseDateResults = sparqlResults({
   game: Binding,
   date: Binding,
   precision: Binding,
+});
+
+const StudioResults = sparqlResults({
+  game: Binding,
+  developer: Binding,
+  developerLabel: OptionalBinding,
+  place: Binding,
+  placeLabel: OptionalBinding,
+  coordinates: Binding,
+  placeIsCountry: Binding,
+});
+
+const GenreResults = sparqlResults({
+  game: Binding,
+  genre: Binding,
+  label: Binding,
 });
 
 const PlaceResults = sparqlResults({
@@ -102,7 +119,25 @@ SELECT ?game ?date ?precision WHERE {
   ?game p:P577/psv:P577 [ wikibase:timeValue ?date ; wikibase:timePrecision ?precision ] .
 }`;
 
-const gamesPerReleaseQuery = 2000;
+export const studiosQuery = (qids: ReadonlyArray<string>) => `
+SELECT ?game ?developer ?developerLabel ?place ?placeLabel ?coordinates ?placeIsCountry WHERE {
+  VALUES ?game { ${qids.map((qid) => `wd:${qid}`).join(" ")} }
+  ?game wdt:P178 ?developer .
+  ?developer wdt:P159 ?place .
+  ?place wdt:P625 ?coordinates .
+  OPTIONAL { ?developer rdfs:label ?developerLabel FILTER(LANG(?developerLabel) = "en") }
+  OPTIONAL { ?place rdfs:label ?placeLabel FILTER(LANG(?placeLabel) = "en") }
+  BIND(EXISTS { ?place wdt:P297 [] } AS ?placeIsCountry)
+}`;
+
+export const genresQuery = (qids: ReadonlyArray<string>) => `
+SELECT ?game ?genre ?label WHERE {
+  VALUES ?game { ${qids.map((qid) => `wd:${qid}`).join(" ")} }
+  ?game wdt:P136 ?genre .
+  ?genre rdfs:label ?label FILTER(LANG(?label) = "en")
+}`;
+
+const gamesPerBatchQuery = 2000;
 
 export const entityQid = (uri: string) => uri.slice(uri.lastIndexOf("/") + 1);
 
@@ -126,6 +161,12 @@ export class Wikidata extends Context.Service<
     releaseDates(
       gameQids: ReadonlyArray<string>,
     ): Effect.Effect<ReadonlyArray<ReleaseDateRow>, WikidataError>;
+    studios(
+      gameQids: ReadonlyArray<string>,
+    ): Effect.Effect<ReadonlyArray<StudioRow>, WikidataError>;
+    genres(
+      gameQids: ReadonlyArray<string>,
+    ): Effect.Effect<ReadonlyArray<GenreRow>, WikidataError>;
   }
 >()("rag-ai-chat/corpus/Wikidata") {
   static readonly layer = Layer.effect(
@@ -184,6 +225,16 @@ export class Wikidata extends Context.Service<
         }));
       });
 
+      const inBatches = <Row>(
+        gameQids: ReadonlyArray<string>,
+        batch: (
+          qids: ReadonlyArray<string>,
+        ) => Effect.Effect<ReadonlyArray<Row>, WikidataError>,
+      ) =>
+        Effect.forEach(Arr.chunksOf(gameQids, gamesPerBatchQuery), batch).pipe(
+          Effect.map((batches) => batches.flat()),
+        );
+
       const releaseDatesInBatch = (qids: ReadonlyArray<string>) =>
         select(releaseDatesQuery(qids), ReleaseDateResults).pipe(
           Effect.map(({ results }) =>
@@ -195,17 +246,57 @@ export class Wikidata extends Context.Service<
           ),
         );
 
+      const studiosInBatch = (qids: ReadonlyArray<string>) =>
+        select(studiosQuery(qids), StudioResults).pipe(
+          Effect.map(({ results }) =>
+            results.bindings.map((row) => ({
+              gameQid: entityQid(row.game.value),
+              developerQid: entityQid(row.developer.value),
+              developerLabel: row.developerLabel?.value,
+              placeQid: entityQid(row.place.value),
+              placeLabel: row.placeLabel?.value,
+              coordinates: row.coordinates.value,
+              placeIsCountry: row.placeIsCountry.value === "true",
+            })),
+          ),
+        );
+
+      const genresInBatch = (qids: ReadonlyArray<string>) =>
+        select(genresQuery(qids), GenreResults).pipe(
+          Effect.map(({ results }) =>
+            results.bindings.map((row) => ({
+              gameQid: entityQid(row.game.value),
+              genreQid: entityQid(row.genre.value),
+              label: row.label.value,
+            })),
+          ),
+        );
+
       const releaseDates = Effect.fn("Wikidata.releaseDates")(function* (
         gameQids: ReadonlyArray<string>,
       ) {
-        const batches = yield* Effect.forEach(
-          Arr.chunksOf(gameQids, gamesPerReleaseQuery),
-          releaseDatesInBatch,
-        );
-        return batches.flat();
+        return yield* inBatches(gameQids, releaseDatesInBatch);
       });
 
-      return Wikidata.of({ videoGameOrigins, places, releaseDates });
+      const studios = Effect.fn("Wikidata.studios")(function* (
+        gameQids: ReadonlyArray<string>,
+      ) {
+        return yield* inBatches(gameQids, studiosInBatch);
+      });
+
+      const genres = Effect.fn("Wikidata.genres")(function* (
+        gameQids: ReadonlyArray<string>,
+      ) {
+        return yield* inBatches(gameQids, genresInBatch);
+      });
+
+      return Wikidata.of({
+        videoGameOrigins,
+        places,
+        releaseDates,
+        studios,
+        genres,
+      });
     }),
   ).pipe(Layer.provide(FetchHttpClient.layer));
 }

@@ -4,6 +4,7 @@ import type { CatalogGame } from "./Catalog";
 import type { Chunk } from "./Chunker";
 import type { Release } from "./ReleaseDate";
 import type { StructuredArticle } from "./StructuredWikipedia";
+import type { GenreRow, Studio } from "./Studios";
 
 export interface IngestedArticle {
   readonly article: StructuredArticle;
@@ -105,6 +106,39 @@ export const migrations = {
       )
     `;
   }),
+  "0005_studios_and_genres": Effect.gen(function* () {
+    const sql = yield* SqlClient.SqlClient;
+    yield* sql`
+      CREATE TABLE studios (
+        game_qid TEXT NOT NULL REFERENCES games (qid),
+        developer_qid TEXT NOT NULL,
+        developer_label TEXT NOT NULL,
+        place_qid TEXT NOT NULL,
+        place_label TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        PRIMARY KEY (game_qid, developer_qid)
+      )
+    `;
+    yield* sql`CREATE INDEX studios_by_place ON studios (place_qid)`;
+    yield* sql`
+      CREATE TABLE genres (
+        game_qid TEXT NOT NULL REFERENCES games (qid),
+        genre_qid TEXT NOT NULL,
+        label TEXT NOT NULL,
+        PRIMARY KEY (game_qid, genre_qid)
+      )
+    `;
+    yield* sql`
+      CREATE VIEW pins AS
+      SELECT DISTINCT game_qid, place_qid, place_label, latitude, longitude, 'studio' AS kind
+      FROM studios
+      UNION ALL
+      SELECT game_qid, place_qid, place_label, latitude, longitude, 'country' AS kind
+      FROM origins
+      WHERE game_qid NOT IN (SELECT game_qid FROM studios)
+    `;
+  }),
 };
 
 const rowsPerStatement = 500;
@@ -163,6 +197,8 @@ export class CorpusStore extends Context.Service<
   {
     saveCatalog(games: ReadonlyArray<CatalogGame>): Effect.Effect<void>;
     saveReleases(releases: ReadonlyArray<Release>): Effect.Effect<void>;
+    saveStudios(studios: ReadonlyArray<Studio>): Effect.Effect<void>;
+    saveGenres(genres: ReadonlyArray<GenreRow>): Effect.Effect<void>;
     readonly rebuildSearchIndex: Effect.Effect<void>;
     passageTextsAfter(
       rowid: number,
@@ -244,6 +280,42 @@ export class CorpusStore extends Context.Service<
               WHERE qid = ${release.gameQid}
             `;
           }
+        },
+        sql.withTransaction,
+        Effect.orDie,
+      );
+
+      const saveStudios = Effect.fn("CorpusStore.saveStudios")(
+        function* (studios: ReadonlyArray<Studio>) {
+          yield* sql`DELETE FROM studios`;
+          yield* insertInBatches(
+            "studios",
+            studios.map((studio) => ({
+              game_qid: studio.gameQid,
+              developer_qid: studio.developerQid,
+              developer_label: studio.developerLabel,
+              place_qid: studio.placeQid,
+              place_label: studio.placeLabel,
+              latitude: studio.latitude,
+              longitude: studio.longitude,
+            })),
+          );
+        },
+        sql.withTransaction,
+        Effect.orDie,
+      );
+
+      const saveGenres = Effect.fn("CorpusStore.saveGenres")(
+        function* (genres: ReadonlyArray<GenreRow>) {
+          yield* sql`DELETE FROM genres`;
+          yield* insertInBatches(
+            "genres",
+            genres.map((genre) => ({
+              game_qid: genre.gameQid,
+              genre_qid: genre.genreQid,
+              label: genre.label,
+            })),
+          );
         },
         sql.withTransaction,
         Effect.orDie,
@@ -425,6 +497,8 @@ export class CorpusStore extends Context.Service<
       return CorpusStore.of({
         saveCatalog,
         saveReleases,
+        saveStudios,
+        saveGenres,
         rebuildSearchIndex,
         passageTextsAfter,
         saveCommonTerms,
