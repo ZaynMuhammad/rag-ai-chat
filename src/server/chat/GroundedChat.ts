@@ -1,12 +1,15 @@
 import {
   Context,
+  type Duration,
   Effect,
-  type ExecutionPlan,
+  ExecutionPlan,
   Layer,
   Ref,
+  Schema,
   Stream,
 } from "effect";
 import { LanguageModel, Model, type Response } from "effect/ai";
+import { CircuitBreaker } from "@/server/provider/CircuitBreaker";
 import { notCovered } from "@/server/provider/ExtractiveAnswer";
 import { Retriever } from "@/server/search/Retriever";
 import type { ChatEvent, ChatRequest } from "./ChatProtocol";
@@ -24,6 +27,28 @@ export type ChatPlan = ExecutionPlan.ExecutionPlan<{
   requirements: never;
 }>;
 
+export class FirstTokenTimeout extends Schema.TaggedError<FirstTokenTimeout>()(
+  "FirstTokenTimeout",
+  {},
+) {}
+
+const firstTokenWithin =
+  (deadline: Duration.Input) =>
+  <A, E, R>(stream: Stream.Stream<A, E, R>) =>
+    Stream.transformPull(stream, (pull) =>
+      Effect.sync(() => {
+        let awaitingFirstToken = true;
+        return Effect.suspend(() => {
+          if (!awaitingFirstToken) return pull;
+          awaitingFirstToken = false;
+          return Effect.timeoutOrElse(pull, {
+            duration: deadline,
+            orElse: () => Effect.fail(new FirstTokenTimeout()),
+          });
+        });
+      }),
+    );
+
 const isTextDelta = (part: Response.AnyPart): part is Response.TextDeltaPart =>
   part.type === "text-delta";
 
@@ -33,20 +58,32 @@ export class GroundedChat extends Context.Service<
   GroundedChat,
   { stream(request: ChatRequest): Stream.Stream<ChatEvent> }
 >()("rag-ai-chat/chat/GroundedChat") {
-  static readonly layer = (plan: ChatPlan) =>
+  static readonly layer = (
+    plan: ChatPlan,
+    firstTokenDeadline: Duration.Input,
+  ) =>
     Layer.effect(
       GroundedChat,
       Effect.gen(function* () {
         const retriever = yield* Retriever;
+        const breaker = yield* CircuitBreaker;
+        const lastResort = plan.steps.length - 1;
 
         const answer = (prompt: ReturnType<typeof groundedPrompt>) =>
           Stream.unwrap(
             Effect.gen(function* () {
               const model = yield* Model.ModelName;
-              return LanguageModel.streamText({ prompt }).pipe(
+              const { stepIndex } = yield* ExecutionPlan.CurrentMetadata;
+              const tokens = LanguageModel.streamText({ prompt }).pipe(
                 Stream.filter(isTextDelta),
                 Stream.map((part) => ({ model, text: part.delta })),
               );
+              return stepIndex === lastResort
+                ? tokens
+                : tokens.pipe(
+                    firstTokenWithin(firstTokenDeadline),
+                    breaker.guard(model),
+                  );
             }),
           ).pipe(
             Stream.withExecutionPlan(plan, {

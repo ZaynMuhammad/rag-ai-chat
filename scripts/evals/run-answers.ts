@@ -37,7 +37,11 @@ import {
   passagesPerAnswer,
 } from "../../src/server/chat/GroundedChat";
 import { groundedPrompt } from "../../src/server/chat/GroundedPrompt";
-import { anthropic } from "../../src/server/provider/ChatModels";
+import {
+  anthropic,
+  firstTokenDeadline,
+} from "../../src/server/provider/ChatModels";
+import { CircuitBreaker } from "../../src/server/provider/CircuitBreaker";
 import { MockProvider } from "../../src/server/provider/MockProvider";
 import type { RetrievedPassage } from "../../src/server/search/Passage";
 import { Retriever } from "../../src/server/search/Retriever";
@@ -314,7 +318,13 @@ const program = Effect.gen(function* () {
 
   const outcomes = yield* Effect.forEach(questions, answerOne, {
     concurrency: provider === "mock" ? 1 : 4,
-  }).pipe(Effect.provide(GroundedChat.layer(plan)));
+  }).pipe(
+    Effect.provide(
+      GroundedChat.layer(plan, yield* firstTokenDeadline).pipe(
+        Layer.provide(CircuitBreaker.layer),
+      ),
+    ),
+  );
 
   const withJudge = judge !== "none";
   const results: GroupResults = Object.fromEntries(

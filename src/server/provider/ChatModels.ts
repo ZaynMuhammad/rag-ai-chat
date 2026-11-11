@@ -1,8 +1,16 @@
 import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic";
-import { Config, Duration, Effect, ExecutionPlan, Layer, Option } from "effect";
+import {
+  Array as Arr,
+  Config,
+  Duration,
+  Effect,
+  ExecutionPlan,
+  Layer,
+  Option,
+} from "effect";
 import { FetchHttpClient } from "effect/http";
 import type { ChatPlan } from "@/server/chat/GroundedChat";
-import { MockProvider } from "./MockProvider";
+import { MockProvider, MockSchedule, parseMockSchedule } from "./MockProvider";
 
 const extractive = MockProvider.extractive({ tokenDelay: Duration.millis(15) });
 
@@ -25,17 +33,36 @@ export const anthropic = (
     Layer.orDie,
   );
 
+const fallback: ChatPlan = ExecutionPlan.make({ provide: extractive });
+
+const mockPrimary = Effect.gen(function* () {
+  const schedule = yield* Config.option(
+    Config.schema(MockSchedule, "MOCK_PRIMARY"),
+  );
+  if (Option.isNone(schedule)) return [];
+  const model = yield* MockProvider.primary(parseMockSchedule(schedule.value));
+  return [ExecutionPlan.make({ provide: model })];
+});
+
+const anthropicSteps = Effect.gen(function* () {
+  const apiKey = yield* Config.option(Config.Redacted("ANTHROPIC_API_KEY"));
+  if (Option.isNone(apiKey)) return [];
+  const model = yield* Config.String("ANTHROPIC_MODEL").pipe(
+    Config.withDefault("claude-haiku-5-5"),
+  );
+  return [ExecutionPlan.make({ provide: anthropic(model) })];
+});
+
+export const firstTokenDeadline = Config.Duration("FIRST_TOKEN_TIMEOUT").pipe(
+  Config.withDefault(Duration.seconds(2)),
+);
+
 export const chatPlan: Effect.Effect<ChatPlan, Config.ConfigError> = Effect.gen(
   function* () {
-    const apiKey = yield* Config.option(Config.Redacted("ANTHROPIC_API_KEY"));
-    if (Option.isNone(apiKey))
-      return ExecutionPlan.make({ provide: extractive });
-    const model = yield* Config.String("ANTHROPIC_MODEL").pipe(
-      Config.withDefault("claude-haiku-5-5"),
-    );
-    return ExecutionPlan.make(
-      { provide: anthropic(model), attempts: 2 },
-      { provide: extractive },
-    );
+    const primaries: Array<ChatPlan> = [
+      ...(yield* mockPrimary),
+      ...(yield* anthropicSteps),
+    ];
+    return ExecutionPlan.merge(...Arr.append(primaries, fallback));
   },
 );
