@@ -56,6 +56,12 @@ export const groundedPrompt = (
   ];
 };
 
+const promptBytesPerToken = 3;
+
+export const estimatedPromptTokens = (
+  prompt: ReadonlyArray<Prompt.MessageEncoded>,
+) => Math.ceil(Buffer.byteLength(JSON.stringify(prompt)) / promptBytesPerToken);
+
 const passagePattern = /<passage n="(\d+)"[^>]*>\n([\s\S]*?)\n<\/passage>/g;
 const questionPattern = /<question>\n([\s\S]*?)\n<\/question>/;
 

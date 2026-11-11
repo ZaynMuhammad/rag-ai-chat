@@ -12,9 +12,10 @@ import {
 import { LanguageModel, Model, type Response } from "effect/ai";
 import { CircuitBreaker } from "@/server/provider/CircuitBreaker";
 import { notCovered } from "@/server/provider/ExtractiveAnswer";
+import { type Budget, ProviderBudget } from "@/server/provider/ProviderBudget";
 import { Retriever } from "@/server/search/Retriever";
 import type { ChatEvent, ChatModelInfo, ChatRequest } from "./ChatProtocol";
-import { groundedPrompt } from "./GroundedPrompt";
+import { estimatedPromptTokens, groundedPrompt } from "./GroundedPrompt";
 
 export const passagesPerAnswer = 6;
 
@@ -25,6 +26,7 @@ export interface ChatProvider extends ChatModelInfo {
   readonly model: Layer.Layer<
     LanguageModel.LanguageModel | Model.ModelName | Model.ProviderName
   >;
+  readonly budget?: Budget;
 }
 
 export class UnknownModel extends Schema.TaggedError<UnknownModel>()(
@@ -34,8 +36,13 @@ export class UnknownModel extends Schema.TaggedError<UnknownModel>()(
 
 const planOf = (providers: Arr.NonEmptyReadonlyArray<ChatProvider>) =>
   ExecutionPlan.merge(
-    ...Arr.map(providers, ({ model }) =>
-      ExecutionPlan.make({ provide: model }),
+    ...Arr.map(providers, ({ model, budget }) =>
+      ExecutionPlan.make({
+        provide: Layer.merge(
+          model,
+          Layer.succeed(ProviderBudget, budget ?? ProviderBudget.unlimited),
+        ),
+      }),
     ),
   );
 
@@ -105,10 +112,13 @@ export class GroundedChat extends Context.Service<
           plan: ChatPlan,
         ) => {
           const lastResort = plan.steps.length - 1;
+          const promptTokens = estimatedPromptTokens(prompt);
           return Stream.unwrap(
             Effect.gen(function* () {
               const model = yield* Model.ModelName;
+              const budget = yield* ProviderBudget;
               const { stepIndex } = yield* ExecutionPlan.CurrentMetadata;
+              const refund = yield* budget.reserve(promptTokens);
               const tokens = LanguageModel.streamText({ prompt }).pipe(
                 Stream.filter(isTextDelta),
                 Stream.map((part) => ({ model, text: part.delta })),
@@ -118,6 +128,7 @@ export class GroundedChat extends Context.Service<
                 : tokens.pipe(
                     firstTokenWithin(firstTokenDeadline),
                     breaker.guard(model),
+                    Stream.tapErrorTag("CircuitOpen", () => refund),
                   );
             }),
           ).pipe(
