@@ -26,3 +26,21 @@ jobs:
       - run: bun run typecheck
       - run: bun run test
       - run: bun run build
+
+  go:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: loadgen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: loadgen/go.mod
+          cache: false
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
+          working-directory: loadgen
+      - run: golangci-lint fmt --diff
+      - run: go test -race ./...

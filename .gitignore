@@ -46,3 +46,6 @@ next-env.d.ts
 
 # corpus downloads and built indexes
 /data/
+
+# go load generator binary
+/loadgen/bin/
