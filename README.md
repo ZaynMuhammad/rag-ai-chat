@@ -21,30 +21,41 @@ Measured on a 2-core VPS. Reproduce with the commands in [Evals and load](#evals
 | With a genre (P136)                                         | 25,221  |
 | Passages                                                    | 162,346 |
 
-| Retrieval eval: 160 frozen questions (HotpotQA, KILT NQ, hand-written) | full BM25 (default) | require a distinctive word |
-| ---------------------------------------------------------------------- | ------------------- | -------------------------- |
-| hit@5                                                                  | 0.669               | 0.656                      |
-| hit@20                                                                 | 0.825               | 0.825                      |
-| MRR                                                                    | 0.510               | 0.498                      |
-| Retrieval p50 / p99                                                    | 207 / 412 ms        | 109 / 410 ms               |
+| Retrieval eval: 160 frozen questions (HotpotQA, KILT NQ, hand-written) | BM25         | dense (default) | hybrid, RRF k=60 |
+| ---------------------------------------------------------------------- | ------------ | --------------- | ---------------- |
+| hit@5                                                                  | 0.669        | 0.806           | 0.806            |
+| hit@20                                                                 | 0.825        | 0.925           | 0.925            |
+| MRR                                                                    | 0.510        | 0.666           | 0.624            |
+| Article recall@20                                                      | 0.863        | 0.897           | 0.912            |
+| Retrieval p50 / p99                                                    | 210 / 418 ms | 79 / 183 ms     | 292 / 502 ms     |
+| hit@5, multi-hop (56, mostly HotpotQA bridge)                          | 0.839        | 0.821           | 0.929            |
+| hit@5, single-hop (104, NQ and hand-written)                           | 0.577        | 0.798           | 0.740            |
 
-| Answer eval: 180 frozen questions through Retriever + `GroundedChat`, `mock-extractive` | all       | HotpotQA  | KILT NQ   | hand-written |
-| --------------------------------------------------------------------------------------- | --------- | --------- | --------- | ------------ |
-| A gold passage is among the 6 sent                                                      | 0.681     | 0.836     | 0.507     | 0.833        |
-| Answer contains a gold answer                                                           | 0.356     | 0.400     | 0.240     | 0.567        |
-| Answer token F1                                                                         | 0.027     | 0.024     | 0.020     | 0.048        |
-| Citation precision (cited passages holding gold evidence)                               | 0.308     | 0.345     | 0.200     | 0.506        |
-| Citation recall (gold articles cited)                                                   | 0.694     | 0.527     | 0.727     | 0.917        |
-| Citation validity / uncited sentences / lexical faithfulness                            | 1 / 0 / 1 | 1 / 0 / 1 | 1 / 0 / 1 | 1 / 0 / 1    |
-| Says "not covered" on the 20 unanswerable questions                                     | 0.200     |           |           | 0.200        |
-| Says "not covered" on an answerable question                                            | 0.006     | 0         | 0.013     | 0            |
+| Answer eval: 180 frozen questions through BM25 retrieval + `GroundedChat`, `mock-extractive` | all       | HotpotQA  | KILT NQ   | hand-written |
+| -------------------------------------------------------------------------------------------- | --------- | --------- | --------- | ------------ |
+| A gold passage is among the 6 sent                                                           | 0.681     | 0.836     | 0.507     | 0.833        |
+| Answer contains a gold answer                                                                | 0.356     | 0.400     | 0.240     | 0.567        |
+| Answer token F1                                                                              | 0.027     | 0.024     | 0.020     | 0.048        |
+| Citation precision (cited passages holding gold evidence)                                    | 0.308     | 0.345     | 0.200     | 0.506        |
+| Citation recall (gold articles cited)                                                        | 0.694     | 0.527     | 0.727     | 0.917        |
+| Citation validity / uncited sentences / lexical faithfulness                                 | 1 / 0 / 1 | 1 / 0 / 1 | 1 / 0 / 1 | 1 / 0 / 1    |
+| Says "not covered" on the 20 unanswerable questions                                          | 0.200     |           |           | 0.200        |
+| Says "not covered" on an answerable question                                                 | 0.006     | 0         | 0.013     | 0            |
 
 The extractive mock quotes retrieved sentences verbatim and cites each one, so citation validity, uncited sentences, and lexical faithfulness sit at their ceilings by construction. They are there to catch a real model. Token F1 is low because the mock answers with whole sentences, not short spans. `EVAL_JUDGE=anthropic` adds a claim-by-claim LLM judge for faithfulness. [`AnswerMetrics.ts`](src/evals/AnswerMetrics.ts), [`FaithfulnessJudge.ts`](src/evals/FaithfulnessJudge.ts)
 
-| Load: 4 chats/s for 60 s, production build, mock provider | full BM25              | require a distinctive word |
-| --------------------------------------------------------- | ---------------------- | -------------------------- |
-| Errors                                                    | 0                      | 0                          |
-| Time to first token p50 / p95 / p99                       | 992 / 7,608 / 8,969 ms | 117 / 436 / 608 ms         |
+| Load: 4 chats/s for 60 s, production build, mock provider | BM25                   | dense (default)    | hybrid                      |
+| --------------------------------------------------------- | ---------------------- | ------------------ | --------------------------- |
+| Errors                                                    | 0                      | 0                  | 0                           |
+| Time to first token p50 / p95 / p99                       | 799 / 6,872 / 7,578 ms | 176 / 211 / 411 ms | 12,973 / 35,262 / 35,472 ms |
+| Server resident memory after the run                      | 228 MB                 | 511 MB             | 520 MB                      |
+
+| Dense index          |                                                                                |
+| -------------------- | ------------------------------------------------------------------------------ |
+| Model                | snowflake-arctic-embed-xs, int8 ONNX (23 MB), 384 dimensions                   |
+| Vectors              | 162,346 × 384 int8 + one scale each: 64 MB in memory, 92 MB added to SQLite    |
+| Load at startup      | about 1 s                                                                      |
+| Embedding the corpus | 84 passages/s alone; 1 h 37 min for all of them at `nice 19` beside other jobs |
 
 | Load: 2 chats/s for 90 s, production build, mock provider, full BM25  | before the answer cache | with it                     |
 | --------------------------------------------------------------------- | ----------------------- | --------------------------- |
@@ -67,17 +78,19 @@ The extractive mock quotes retrieved sentences verbatim and cites each one, so c
 Wikidata SPARQL ──► 26,937 games: country of origin ──► UN M49 region
                └──► earliest release date (P577), kept at its precision
 wikimedia/structured-wikipedia ──► sections ──► passages (≤ 400 tokens) ──► SQLite + FTS5
+passages ──► arctic-embed-xs on CPU ──► int8 vector per passage ──► SQLite
 
 question + scope (region, years, or one game)
   ──► anonymous session check and rate limit
   ──► answer cache: replay a cached answer, or join one still streaming
-  ──► BM25 over passages in scope (top 6)
+  ──► nearest passage vectors in scope (top 6); or BM25, or both fused with RRF
   ──► Citations event ──► model stream ──► Delta events ──► Done { model }
 ```
 
 - **Corpus.** [`src/corpus`](src/corpus) and [`scripts/corpus`](scripts/corpus) build `data/corpus/games.sqlite`. Wikidata picks the games, their countries of origin, their developers' headquarters cities, and their genres. A headquarters that is a whole country is dropped, so the game falls back to its country pin. UN M49 turns a country into a region. Wikimedia's pre-parsed `structured-wikipedia` dump supplies the text, joined on Wikidata QID, so renames and redirects don't matter.
 - **Release dates** keep the precision Wikidata states, so a game known only by year shows "1985", not "1 Jan 1985". Truncated ISO dates sort correctly as plain strings.
-- **Retrieval** is BM25 in SQLite FTS5 (porter stemming, diacritics folded), filtered by the chat's scope. It reads the corpus through `node:sqlite`, so there is no native addon. [`Retriever.ts`](src/server/search/Retriever.ts)
+- **Retrieval** is dense by default. [snowflake-arctic-embed-xs](https://huggingface.co/Snowflake/snowflake-arctic-embed-xs) embeds the heading and the first 256 tokens of each passage (the whole passage for 65% of them; 128 tokens would cut 69%). Each vector is stored as int8 with one scale, which moves a unit dot product by under 0.01 in the tests. At startup every vector loads into one 64 MB matrix. A question is embedded with the model's query prefix and ranked by an exact brute-force dot product over the passages in scope: 162k × 384 takes about 70 ms in JavaScript, so there is no ANN index to tune or keep in sync. [`DenseIndex.ts`](src/server/search/DenseIndex.ts)
+- **BM25** in SQLite FTS5 (porter stemming, diacritics folded) is still there with `RETRIEVAL_MODE=bm25`. `hybrid` fuses the BM25 and dense top 50 with reciprocal rank fusion. Hybrid wins multi-hop questions, where exact names matter, but runs BM25's full scan on every chat and saturates the server at 4 chats/s, so it is opt-in. [`Retriever.ts`](src/server/search/Retriever.ts)
 - **Grounded chat** sends the retrieved passages first, then streams the answer. When nothing in scope matches, it says so without calling a model. [`GroundedChat.ts`](src/server/chat/GroundedChat.ts)
 - **Failover.** Providers form an Effect `ExecutionPlan`. A provider that fails, or sends no token within `FIRST_TOKEN_TIMEOUT` (2 s), hands over to the next; once tokens have streamed, a failure is reported rather than restarted. A per-provider circuit breaker opens after 5 consecutive failures or half the calls in 30 s, and requests then skip that provider without calling it. After 10 s one probe goes through, and a success closes it. The last provider in the plan is never cut off, since nothing is left to fail over to. State is in memory, per process, and labeled only by provider. [`CircuitBreaker.ts`](src/server/provider/CircuitBreaker.ts)
 - **Answer cache.** A first-turn question is keyed by an HMAC of the normalized question (NFKC, case, spacing, end punctuation), its scope, the model that answers it, the configured models, and the corpus version. Identical questions in flight share one upstream stream: a late joiner replays what was sent, then follows the live tail, and the stream finishes even if the client that started it leaves. Only complete answers written by that model without a provider failure are kept, in an LRU of 1,000 entries for 10 minutes. It wraps `GroundedChat` as a layer. [`AnswerCache.ts`](src/server/chat/AnswerCache.ts)
@@ -134,22 +147,25 @@ Requires Bun 1.3 and Node 24.
 ```sh
 bun install
 bun run corpus:build         # about 20 minutes and 37 GB streamed; keeps a 300 MB SQLite file in data/
+bun run corpus:embed         # downloads the 23 MB model, embeds every passage; resumable, 30 to 100 minutes on 2 cores
 bun run dev                  # http://localhost:3000
 ```
 
-| Environment variable          | Default                     | Effect                                                                                    |
-| ----------------------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`           | unset                       | Unset: the free extractive mock answers. Set: Claude answers.                             |
-| `ANTHROPIC_MODEL`             | `claude-haiku-5-5`          | Model used when a key is set                                                              |
-| `OPENAI_MODEL`                | unset                       | Set: an OpenAI-compatible model joins the plan, e.g. `gpt-5-mini` or `llama3.2:3b`        |
-| `OPENAI_BASE_URL`             | `https://api.openai.com/v1` | e.g. `https://api.groq.com/openai/v1` or `http://localhost:11434/v1` for Ollama           |
-| `OPENAI_API_KEY`              | unset                       | Bearer key for that endpoint; Ollama needs none                                           |
-| `FIRST_TOKEN_TIMEOUT`         | `2 seconds`                 | How long a provider may take to send its first token before the next one takes over       |
-| `MOCK_PRIMARY`                | unset                       | e.g. `ok@15,hang@15,outage@15,ok`: a scheduled mock ahead of the others, for load tests   |
-| `RETRIEVAL_COMMON_WORD_SHARE` | unset                       | e.g. `0.1`: every match needs a word found in under 10% of passages (faster, see Numbers) |
-| `SESSION_SECRET`              | random per process          | HMAC key for session tokens; set it when running more than one process                    |
-| `CORPUS_DATABASE`             | `data/corpus/games.sqlite`  | Corpus location                                                                           |
-| `METRICS_TOKEN`               | unset                       | Set: `/api/metrics` requires it as a bearer token                                         |
+| Environment variable          | Default                     | Effect                                                                                              |
+| ----------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`           | unset                       | Unset: the free extractive mock answers. Set: Claude answers.                                       |
+| `ANTHROPIC_MODEL`             | `claude-haiku-5-5`          | Model used when a key is set                                                                        |
+| `OPENAI_MODEL`                | unset                       | Set: an OpenAI-compatible model joins the plan, e.g. `gpt-5-mini` or `llama3.2:3b`                  |
+| `OPENAI_BASE_URL`             | `https://api.openai.com/v1` | e.g. `https://api.groq.com/openai/v1` or `http://localhost:11434/v1` for Ollama                     |
+| `OPENAI_API_KEY`              | unset                       | Bearer key for that endpoint; Ollama needs none                                                     |
+| `FIRST_TOKEN_TIMEOUT`         | `2 seconds`                 | How long a provider may take to send its first token before the next one takes over                 |
+| `MOCK_PRIMARY`                | unset                       | e.g. `ok@15,hang@15,outage@15,ok`: a scheduled mock ahead of the others, for load tests             |
+| `RETRIEVAL_MODE`              | `dense`                     | `dense`, `bm25`, or `hybrid`. Without embeddings, `dense` and `hybrid` use `bm25` and log a warning |
+| `RETRIEVAL_COMMON_WORD_SHARE` | unset                       | e.g. `0.1`: every BM25 match needs a word found in under 10% of passages (faster)                   |
+| `EMBEDDING_MODEL_DIRECTORY`   | `data/models`               | Where `corpus:embed` put the model; the server never downloads it                                   |
+| `SESSION_SECRET`              | random per process          | HMAC key for session tokens; set it when running more than one process                              |
+| `CORPUS_DATABASE`             | `data/corpus/games.sqlite`  | Corpus location                                                                                     |
+| `METRICS_TOKEN`               | unset                       | Set: `/api/metrics` requires it as a bearer token                                                   |
 
 ## Evals and load
 

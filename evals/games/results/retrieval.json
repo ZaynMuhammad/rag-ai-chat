@@ -6,7 +6,23 @@
     "tokens": 31345175,
     "shards": 86
   },
+  "embedding": {
+    "model": "Snowflake/snowflake-arctic-embed-xs",
+    "passages": 162346,
+    "embedded": 162346
+  },
+  "defaultMode": "dense",
   "depth": 20,
+  "denseIndex": {
+    "passages": 162346,
+    "dimensions": 384,
+    "bytes": 64289016,
+    "megabytes": 64.289,
+    "storedMegabytes": 63.64,
+    "loadSeconds": 1.052,
+    "residentMegabytesBefore": 149.078,
+    "residentMegabytesAfter": 414.732
+  },
   "runs": [
     {
       "variant": "bm25",
@@ -14,6 +30,7 @@
         "headingWeight": 2,
         "commonTermShare": null
       },
+      "fusion": null,
       "results": {
         "all": {
           "questions": 160,
@@ -24,8 +41,8 @@
           "articleRecall@10": 0.822,
           "articleRecall@20": 0.863,
           "mrr": 0.51,
-          "p50ms": 206.667,
-          "p99ms": 411.524
+          "p50ms": 210.43,
+          "p99ms": 418.188
         },
         "source:hotpotqa": {
           "questions": 55,
@@ -36,8 +53,8 @@
           "articleRecall@10": 0.709,
           "articleRecall@20": 0.755,
           "mrr": 0.678,
-          "p50ms": 322.703,
-          "p99ms": 419.867
+          "p50ms": 312.309,
+          "p99ms": 425.485
         },
         "tag:multi_hop": {
           "questions": 56,
@@ -48,8 +65,8 @@
           "articleRecall@10": 0.714,
           "articleRecall@20": 0.759,
           "mrr": 0.684,
-          "p50ms": 322.703,
-          "p99ms": 419.867
+          "p50ms": 312.309,
+          "p99ms": 425.485
         },
         "tag:bridge": {
           "questions": 55,
@@ -60,8 +77,8 @@
           "articleRecall@10": 0.709,
           "articleRecall@20": 0.755,
           "mrr": 0.678,
-          "p50ms": 322.703,
-          "p99ms": 419.867
+          "p50ms": 312.309,
+          "p99ms": 425.485
         },
         "tag:medium": {
           "questions": 31,
@@ -72,8 +89,8 @@
           "articleRecall@10": 0.694,
           "articleRecall@20": 0.742,
           "mrr": 0.699,
-          "p50ms": 322.703,
-          "p99ms": 375.997
+          "p50ms": 312.933,
+          "p99ms": 379.309
         },
         "tag:hard": {
           "questions": 15,
@@ -84,8 +101,8 @@
           "articleRecall@10": 0.7,
           "articleRecall@20": 0.733,
           "mrr": 0.52,
-          "p50ms": 318.598,
-          "p99ms": 369.441
+          "p50ms": 298.655,
+          "p99ms": 337.398
         },
         "tag:easy": {
           "questions": 9,
@@ -96,8 +113,8 @@
           "articleRecall@10": 0.778,
           "articleRecall@20": 0.833,
           "mrr": 0.87,
-          "p50ms": 402.699,
-          "p99ms": 419.867
+          "p50ms": 375.495,
+          "p99ms": 425.485
         },
         "source:kilt_nq": {
           "questions": 75,
@@ -108,8 +125,8 @@
           "articleRecall@10": 0.833,
           "articleRecall@20": 0.887,
           "mrr": 0.343,
-          "p50ms": 173.394,
-          "p99ms": 370.907
+          "p50ms": 169.589,
+          "p99ms": 418.188
         },
         "tag:single_hop": {
           "questions": 104,
@@ -120,8 +137,8 @@
           "articleRecall@10": 0.88,
           "articleRecall@20": 0.918,
           "mrr": 0.417,
-          "p50ms": 166.666,
-          "p99ms": 351.49
+          "p50ms": 153.78,
+          "p99ms": 358.093
         },
         "source:handwritten": {
           "questions": 30,
@@ -132,8 +149,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.62,
-          "p50ms": 156.612,
-          "p99ms": 333.69
+          "p50ms": 145.913,
+          "p99ms": 321.779
         },
         "tag:region": {
           "questions": 16,
@@ -144,8 +161,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.616,
-          "p50ms": 156.849,
-          "p99ms": 309.687
+          "p50ms": 145.913,
+          "p99ms": 321.779
         },
         "tag:recent": {
           "questions": 14,
@@ -156,8 +173,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.698,
-          "p50ms": 166.82,
-          "p99ms": 333.69
+          "p50ms": 146.835,
+          "p99ms": 288.077
         },
         "tag:paraphrase": {
           "questions": 2,
@@ -168,8 +185,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.222,
-          "p50ms": 333.69,
-          "p99ms": 333.69
+          "p50ms": 309.422,
+          "p99ms": 309.422
         }
       }
     },
@@ -179,6 +196,7 @@
         "headingWeight": 2,
         "commonTermShare": 0.2
       },
+      "fusion": null,
       "results": {
         "all": {
           "questions": 160,
@@ -189,8 +207,8 @@
           "articleRecall@10": 0.831,
           "articleRecall@20": 0.856,
           "mrr": 0.506,
-          "p50ms": 173.57,
-          "p99ms": 536.885
+          "p50ms": 156.011,
+          "p99ms": 509.146
         },
         "source:hotpotqa": {
           "questions": 55,
@@ -201,8 +219,8 @@
           "articleRecall@10": 0.7,
           "articleRecall@20": 0.755,
           "mrr": 0.668,
-          "p50ms": 250.145,
-          "p99ms": 874.9
+          "p50ms": 221.712,
+          "p99ms": 554.844
         },
         "tag:multi_hop": {
           "questions": 56,
@@ -213,8 +231,8 @@
           "articleRecall@10": 0.705,
           "articleRecall@20": 0.759,
           "mrr": 0.674,
-          "p50ms": 250.145,
-          "p99ms": 874.9
+          "p50ms": 221.712,
+          "p99ms": 554.844
         },
         "tag:bridge": {
           "questions": 55,
@@ -225,8 +243,8 @@
           "articleRecall@10": 0.7,
           "articleRecall@20": 0.755,
           "mrr": 0.668,
-          "p50ms": 250.145,
-          "p99ms": 874.9
+          "p50ms": 221.712,
+          "p99ms": 554.844
         },
         "tag:medium": {
           "questions": 31,
@@ -237,8 +255,8 @@
           "articleRecall@10": 0.694,
           "articleRecall@20": 0.742,
           "mrr": 0.681,
-          "p50ms": 234.061,
-          "p99ms": 449.239
+          "p50ms": 219.124,
+          "p99ms": 435.722
         },
         "tag:hard": {
           "questions": 15,
@@ -249,8 +267,8 @@
           "articleRecall@10": 0.7,
           "articleRecall@20": 0.733,
           "mrr": 0.518,
-          "p50ms": 208.887,
-          "p99ms": 451.201
+          "p50ms": 193.68,
+          "p99ms": 372.025
         },
         "tag:easy": {
           "questions": 9,
@@ -261,8 +279,8 @@
           "articleRecall@10": 0.722,
           "articleRecall@20": 0.833,
           "mrr": 0.87,
-          "p50ms": 361.227,
-          "p99ms": 874.9
+          "p50ms": 346.046,
+          "p99ms": 554.844
         },
         "source:kilt_nq": {
           "questions": 75,
@@ -273,8 +291,8 @@
           "articleRecall@10": 0.86,
           "articleRecall@20": 0.873,
           "mrr": 0.343,
-          "p50ms": 154.715,
-          "p99ms": 358.595
+          "p50ms": 149.258,
+          "p99ms": 276.624
         },
         "tag:single_hop": {
           "questions": 104,
@@ -285,8 +303,8 @@
           "articleRecall@10": 0.899,
           "articleRecall@20": 0.909,
           "mrr": 0.416,
-          "p50ms": 153.512,
-          "p99ms": 358.595
+          "p50ms": 144.525,
+          "p99ms": 247.403
         },
         "source:handwritten": {
           "questions": 30,
@@ -297,8 +315,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.617,
-          "p50ms": 141.684,
-          "p99ms": 384.357
+          "p50ms": 114.11,
+          "p99ms": 212.562
         },
         "tag:region": {
           "questions": 16,
@@ -309,8 +327,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.616,
-          "p50ms": 169.179,
-          "p99ms": 384.357
+          "p50ms": 120.09,
+          "p99ms": 192.419
         },
         "tag:recent": {
           "questions": 14,
@@ -321,8 +339,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.698,
-          "p50ms": 165.796,
-          "p99ms": 384.357
+          "p50ms": 132.539,
+          "p99ms": 200.67
         },
         "tag:paraphrase": {
           "questions": 2,
@@ -333,8 +351,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.181,
-          "p50ms": 226.031,
-          "p99ms": 226.031
+          "p50ms": 212.562,
+          "p99ms": 212.562
         }
       }
     },
@@ -344,6 +362,7 @@
         "headingWeight": 2,
         "commonTermShare": 0.1
       },
+      "fusion": null,
       "results": {
         "all": {
           "questions": 160,
@@ -354,8 +373,8 @@
           "articleRecall@10": 0.825,
           "articleRecall@20": 0.859,
           "mrr": 0.498,
-          "p50ms": 109.365,
-          "p99ms": 409.942
+          "p50ms": 100.247,
+          "p99ms": 351.041
         },
         "source:hotpotqa": {
           "questions": 55,
@@ -366,8 +385,8 @@
           "articleRecall@10": 0.7,
           "articleRecall@20": 0.745,
           "mrr": 0.658,
-          "p50ms": 161.416,
-          "p99ms": 410.676
+          "p50ms": 144.101,
+          "p99ms": 402.597
         },
         "tag:multi_hop": {
           "questions": 56,
@@ -378,8 +397,8 @@
           "articleRecall@10": 0.705,
           "articleRecall@20": 0.75,
           "mrr": 0.664,
-          "p50ms": 161.416,
-          "p99ms": 410.676
+          "p50ms": 144.101,
+          "p99ms": 402.597
         },
         "tag:bridge": {
           "questions": 55,
@@ -390,8 +409,8 @@
           "articleRecall@10": 0.7,
           "articleRecall@20": 0.745,
           "mrr": 0.658,
-          "p50ms": 161.416,
-          "p99ms": 410.676
+          "p50ms": 144.101,
+          "p99ms": 402.597
         },
         "tag:medium": {
           "questions": 31,
@@ -402,8 +421,8 @@
           "articleRecall@10": 0.677,
           "articleRecall@20": 0.726,
           "mrr": 0.679,
-          "p50ms": 131.399,
-          "p99ms": 277.252
+          "p50ms": 134.071,
+          "p99ms": 236.887
         },
         "tag:hard": {
           "questions": 15,
@@ -414,8 +433,8 @@
           "articleRecall@10": 0.7,
           "articleRecall@20": 0.733,
           "mrr": 0.486,
-          "p50ms": 161.416,
-          "p99ms": 409.942
+          "p50ms": 155.141,
+          "p99ms": 351.041
         },
         "tag:easy": {
           "questions": 9,
@@ -426,8 +445,8 @@
           "articleRecall@10": 0.778,
           "articleRecall@20": 0.833,
           "mrr": 0.87,
-          "p50ms": 229.276,
-          "p99ms": 410.676
+          "p50ms": 226.264,
+          "p99ms": 402.597
         },
         "source:kilt_nq": {
           "questions": 75,
@@ -438,8 +457,8 @@
           "articleRecall@10": 0.847,
           "articleRecall@20": 0.887,
           "mrr": 0.338,
-          "p50ms": 99.669,
-          "p99ms": 213.267
+          "p50ms": 90.259,
+          "p99ms": 204.123
         },
         "tag:single_hop": {
           "questions": 104,
@@ -450,8 +469,8 @@
           "articleRecall@10": 0.889,
           "articleRecall@20": 0.918,
           "mrr": 0.408,
-          "p50ms": 91.349,
-          "p99ms": 211.741
+          "p50ms": 86.927,
+          "p99ms": 192.437
         },
         "source:handwritten": {
           "questions": 30,
@@ -462,8 +481,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.605,
-          "p50ms": 71.628,
-          "p99ms": 197.375
+          "p50ms": 73.265,
+          "p99ms": 180.852
         },
         "tag:region": {
           "questions": 16,
@@ -474,8 +493,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.611,
-          "p50ms": 71.628,
-          "p99ms": 185.616
+          "p50ms": 71.102,
+          "p99ms": 180.852
         },
         "tag:recent": {
           "questions": 14,
@@ -486,8 +505,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.681,
-          "p50ms": 71.628,
-          "p99ms": 197.375
+          "p50ms": 75.209,
+          "p99ms": 180.852
         },
         "tag:paraphrase": {
           "questions": 2,
@@ -498,8 +517,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.127,
-          "p50ms": 126.083,
-          "p99ms": 126.083
+          "p50ms": 116.324,
+          "p99ms": 116.324
         }
       }
     },
@@ -509,6 +528,7 @@
         "headingWeight": 2,
         "commonTermShare": 0.05
       },
+      "fusion": null,
       "results": {
         "all": {
           "questions": 160,
@@ -519,8 +539,8 @@
           "articleRecall@10": 0.819,
           "articleRecall@20": 0.863,
           "mrr": 0.477,
-          "p50ms": 68.055,
-          "p99ms": 241.739
+          "p50ms": 63.44,
+          "p99ms": 240.728
         },
         "source:hotpotqa": {
           "questions": 55,
@@ -531,8 +551,8 @@
           "articleRecall@10": 0.682,
           "articleRecall@20": 0.736,
           "mrr": 0.637,
-          "p50ms": 105.201,
-          "p99ms": 349.207
+          "p50ms": 96.455,
+          "p99ms": 327.484
         },
         "tag:multi_hop": {
           "questions": 56,
@@ -543,8 +563,8 @@
           "articleRecall@10": 0.688,
           "articleRecall@20": 0.741,
           "mrr": 0.643,
-          "p50ms": 105.201,
-          "p99ms": 349.207
+          "p50ms": 96.455,
+          "p99ms": 327.484
         },
         "tag:bridge": {
           "questions": 55,
@@ -555,8 +575,8 @@
           "articleRecall@10": 0.682,
           "articleRecall@20": 0.736,
           "mrr": 0.637,
-          "p50ms": 105.201,
-          "p99ms": 349.207
+          "p50ms": 96.455,
+          "p99ms": 327.484
         },
         "tag:medium": {
           "questions": 31,
@@ -567,8 +587,8 @@
           "articleRecall@10": 0.677,
           "articleRecall@20": 0.726,
           "mrr": 0.648,
-          "p50ms": 105.201,
-          "p99ms": 220.282
+          "p50ms": 96.455,
+          "p99ms": 177.474
         },
         "tag:hard": {
           "questions": 15,
@@ -579,8 +599,8 @@
           "articleRecall@10": 0.7,
           "articleRecall@20": 0.733,
           "mrr": 0.473,
-          "p50ms": 77.081,
-          "p99ms": 349.207
+          "p50ms": 74.306,
+          "p99ms": 327.484
         },
         "tag:easy": {
           "questions": 9,
@@ -591,8 +611,8 @@
           "articleRecall@10": 0.667,
           "articleRecall@20": 0.778,
           "mrr": 0.87,
-          "p50ms": 202.33,
-          "p99ms": 241.739
+          "p50ms": 187.27,
+          "p99ms": 227.054
         },
         "source:kilt_nq": {
           "questions": 75,
@@ -603,8 +623,8 @@
           "articleRecall@10": 0.847,
           "articleRecall@20": 0.9,
           "mrr": 0.309,
-          "p50ms": 55.786,
-          "p99ms": 232.859
+          "p50ms": 56.695,
+          "p99ms": 240.728
         },
         "tag:single_hop": {
           "questions": 104,
@@ -615,8 +635,8 @@
           "articleRecall@10": 0.889,
           "articleRecall@20": 0.928,
           "mrr": 0.387,
-          "p50ms": 54.018,
-          "p99ms": 206.978
+          "p50ms": 55.931,
+          "p99ms": 214.689
         },
         "source:handwritten": {
           "questions": 30,
@@ -627,8 +647,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.603,
-          "p50ms": 52.913,
-          "p99ms": 182.119
+          "p50ms": 53.049,
+          "p99ms": 166.611
         },
         "tag:region": {
           "questions": 16,
@@ -639,8 +659,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.609,
-          "p50ms": 52.913,
-          "p99ms": 182.119
+          "p50ms": 53.049,
+          "p99ms": 166.611
         },
         "tag:recent": {
           "questions": 14,
@@ -651,8 +671,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.682,
-          "p50ms": 50.428,
-          "p99ms": 182.119
+          "p50ms": 51.456,
+          "p99ms": 166.611
         },
         "tag:paraphrase": {
           "questions": 2,
@@ -663,8 +683,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.134,
-          "p50ms": 115.352,
-          "p99ms": 115.352
+          "p50ms": 112.824,
+          "p99ms": 112.824
         }
       }
     },
@@ -674,6 +694,7 @@
         "headingWeight": 2,
         "commonTermShare": 0.02
       },
+      "fusion": null,
       "results": {
         "all": {
           "questions": 160,
@@ -684,8 +705,8 @@
           "articleRecall@10": 0.825,
           "articleRecall@20": 0.872,
           "mrr": 0.477,
-          "p50ms": 29.355,
-          "p99ms": 253.531
+          "p50ms": 26.465,
+          "p99ms": 215.499
         },
         "source:hotpotqa": {
           "questions": 55,
@@ -696,8 +717,8 @@
           "articleRecall@10": 0.7,
           "articleRecall@20": 0.764,
           "mrr": 0.623,
-          "p50ms": 44.808,
-          "p99ms": 163.093
+          "p50ms": 36.456,
+          "p99ms": 127.349
         },
         "tag:multi_hop": {
           "questions": 56,
@@ -708,8 +729,8 @@
           "articleRecall@10": 0.705,
           "articleRecall@20": 0.768,
           "mrr": 0.63,
-          "p50ms": 44.808,
-          "p99ms": 163.093
+          "p50ms": 36.456,
+          "p99ms": 127.349
         },
         "tag:bridge": {
           "questions": 55,
@@ -720,8 +741,8 @@
           "articleRecall@10": 0.7,
           "articleRecall@20": 0.764,
           "mrr": 0.623,
-          "p50ms": 44.808,
-          "p99ms": 163.093
+          "p50ms": 36.456,
+          "p99ms": 127.349
         },
         "tag:medium": {
           "questions": 31,
@@ -732,8 +753,8 @@
           "articleRecall@10": 0.694,
           "articleRecall@20": 0.758,
           "mrr": 0.611,
-          "p50ms": 43.614,
-          "p99ms": 163.093
+          "p50ms": 35.33,
+          "p99ms": 127.349
         },
         "tag:hard": {
           "questions": 15,
@@ -744,8 +765,8 @@
           "articleRecall@10": 0.667,
           "articleRecall@20": 0.733,
           "mrr": 0.5,
-          "p50ms": 39.634,
-          "p99ms": 110.238
+          "p50ms": 32.651,
+          "p99ms": 107.563
         },
         "tag:easy": {
           "questions": 9,
@@ -756,8 +777,8 @@
           "articleRecall@10": 0.778,
           "articleRecall@20": 0.833,
           "mrr": 0.87,
-          "p50ms": 58.12,
-          "p99ms": 149.847
+          "p50ms": 61.169,
+          "p99ms": 118.055
         },
         "source:kilt_nq": {
           "questions": 75,
@@ -768,8 +789,8 @@
           "articleRecall@10": 0.847,
           "articleRecall@20": 0.9,
           "mrr": 0.32,
-          "p50ms": 25.346,
-          "p99ms": 350.949
+          "p50ms": 22.612,
+          "p99ms": 322.173
         },
         "tag:single_hop": {
           "questions": 104,
@@ -780,8 +801,8 @@
           "articleRecall@10": 0.889,
           "articleRecall@20": 0.928,
           "mrr": 0.395,
-          "p50ms": 23.051,
-          "p99ms": 253.531
+          "p50ms": 17.984,
+          "p99ms": 215.499
         },
         "source:handwritten": {
           "questions": 30,
@@ -792,8 +813,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.602,
-          "p50ms": 17.193,
-          "p99ms": 123.68
+          "p50ms": 16.757,
+          "p99ms": 109.5
         },
         "tag:region": {
           "questions": 16,
@@ -804,8 +825,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.635,
-          "p50ms": 15.834,
-          "p99ms": 46.002
+          "p50ms": 12.112,
+          "p99ms": 40.378
         },
         "tag:recent": {
           "questions": 14,
@@ -816,8 +837,8 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.647,
-          "p50ms": 23.788,
-          "p99ms": 66.283
+          "p50ms": 23.563,
+          "p99ms": 57.561
         },
         "tag:paraphrase": {
           "questions": 2,
@@ -828,8 +849,1028 @@
           "articleRecall@10": 1,
           "articleRecall@20": 1,
           "mrr": 0.143,
-          "p50ms": 123.68,
-          "p99ms": 123.68
+          "p50ms": 109.5,
+          "p99ms": 109.5
+        }
+      }
+    },
+    {
+      "variant": "dense",
+      "options": {
+        "headingWeight": 2,
+        "commonTermShare": null
+      },
+      "fusion": {
+        "mode": "dense",
+        "k": 60,
+        "candidates": 50
+      },
+      "results": {
+        "all": {
+          "questions": 160,
+          "hit@5": 0.806,
+          "hit@10": 0.875,
+          "hit@20": 0.925,
+          "articleRecall@5": 0.825,
+          "articleRecall@10": 0.859,
+          "articleRecall@20": 0.897,
+          "mrr": 0.666,
+          "p50ms": 78.626,
+          "p99ms": 182.831
+        },
+        "source:hotpotqa": {
+          "questions": 55,
+          "hit@5": 0.818,
+          "hit@10": 0.873,
+          "hit@20": 0.927,
+          "articleRecall@5": 0.645,
+          "articleRecall@10": 0.7,
+          "articleRecall@20": 0.764,
+          "mrr": 0.679,
+          "p50ms": 77.448,
+          "p99ms": 112.981
+        },
+        "tag:multi_hop": {
+          "questions": 56,
+          "hit@5": 0.821,
+          "hit@10": 0.875,
+          "hit@20": 0.929,
+          "articleRecall@5": 0.643,
+          "articleRecall@10": 0.705,
+          "articleRecall@20": 0.768,
+          "mrr": 0.684,
+          "p50ms": 77.448,
+          "p99ms": 112.981
+        },
+        "tag:bridge": {
+          "questions": 55,
+          "hit@5": 0.818,
+          "hit@10": 0.873,
+          "hit@20": 0.927,
+          "articleRecall@5": 0.645,
+          "articleRecall@10": 0.7,
+          "articleRecall@20": 0.764,
+          "mrr": 0.679,
+          "p50ms": 77.448,
+          "p99ms": 112.981
+        },
+        "tag:medium": {
+          "questions": 31,
+          "hit@5": 0.774,
+          "hit@10": 0.839,
+          "hit@20": 0.935,
+          "articleRecall@5": 0.613,
+          "articleRecall@10": 0.661,
+          "articleRecall@20": 0.742,
+          "mrr": 0.65,
+          "p50ms": 81.754,
+          "p99ms": 112.981
+        },
+        "tag:hard": {
+          "questions": 15,
+          "hit@5": 0.8,
+          "hit@10": 0.867,
+          "hit@20": 0.867,
+          "articleRecall@5": 0.633,
+          "articleRecall@10": 0.7,
+          "articleRecall@20": 0.733,
+          "mrr": 0.578,
+          "p50ms": 73.574,
+          "p99ms": 95.53
+        },
+        "tag:easy": {
+          "questions": 9,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.778,
+          "articleRecall@10": 0.833,
+          "articleRecall@20": 0.889,
+          "mrr": 0.944,
+          "p50ms": 77.159,
+          "p99ms": 98.471
+        },
+        "source:kilt_nq": {
+          "questions": 75,
+          "hit@5": 0.733,
+          "hit@10": 0.84,
+          "hit@20": 0.893,
+          "articleRecall@5": 0.907,
+          "articleRecall@10": 0.933,
+          "articleRecall@20": 0.953,
+          "mrr": 0.555,
+          "p50ms": 80.635,
+          "p99ms": 127.694
+        },
+        "tag:single_hop": {
+          "questions": 104,
+          "hit@5": 0.798,
+          "hit@10": 0.875,
+          "hit@20": 0.923,
+          "articleRecall@5": 0.923,
+          "articleRecall@10": 0.942,
+          "articleRecall@20": 0.966,
+          "mrr": 0.656,
+          "p50ms": 79.723,
+          "p99ms": 182.831
+        },
+        "source:handwritten": {
+          "questions": 30,
+          "hit@5": 0.967,
+          "hit@10": 0.967,
+          "hit@20": 1,
+          "articleRecall@5": 0.95,
+          "articleRecall@10": 0.967,
+          "articleRecall@20": 1,
+          "mrr": 0.919,
+          "p50ms": 76.768,
+          "p99ms": 238.499
+        },
+        "tag:region": {
+          "questions": 16,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.938,
+          "p50ms": 78.918,
+          "p99ms": 238.499
+        },
+        "tag:recent": {
+          "questions": 14,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.964,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.964,
+          "p50ms": 75.782,
+          "p99ms": 125.984
+        },
+        "tag:paraphrase": {
+          "questions": 2,
+          "hit@5": 0.5,
+          "hit@10": 0.5,
+          "hit@20": 1,
+          "articleRecall@5": 0.5,
+          "articleRecall@10": 0.5,
+          "articleRecall@20": 1,
+          "mrr": 0.536,
+          "p50ms": 68.583,
+          "p99ms": 68.583
+        }
+      }
+    },
+    {
+      "variant": "hybrid, rrf k=60",
+      "options": {
+        "headingWeight": 2,
+        "commonTermShare": null
+      },
+      "fusion": {
+        "mode": "hybrid",
+        "k": 60,
+        "candidates": 50
+      },
+      "results": {
+        "all": {
+          "questions": 160,
+          "hit@5": 0.806,
+          "hit@10": 0.9,
+          "hit@20": 0.925,
+          "articleRecall@5": 0.825,
+          "articleRecall@10": 0.894,
+          "articleRecall@20": 0.912,
+          "mrr": 0.624,
+          "p50ms": 292.224,
+          "p99ms": 501.834
+        },
+        "source:hotpotqa": {
+          "questions": 55,
+          "hit@5": 0.927,
+          "hit@10": 0.945,
+          "hit@20": 0.945,
+          "articleRecall@5": 0.709,
+          "articleRecall@10": 0.773,
+          "articleRecall@20": 0.791,
+          "mrr": 0.727,
+          "p50ms": 400.096,
+          "p99ms": 537.38
+        },
+        "tag:multi_hop": {
+          "questions": 56,
+          "hit@5": 0.929,
+          "hit@10": 0.946,
+          "hit@20": 0.946,
+          "articleRecall@5": 0.714,
+          "articleRecall@10": 0.777,
+          "articleRecall@20": 0.795,
+          "mrr": 0.732,
+          "p50ms": 400.096,
+          "p99ms": 537.38
+        },
+        "tag:bridge": {
+          "questions": 55,
+          "hit@5": 0.927,
+          "hit@10": 0.945,
+          "hit@20": 0.945,
+          "articleRecall@5": 0.709,
+          "articleRecall@10": 0.773,
+          "articleRecall@20": 0.791,
+          "mrr": 0.727,
+          "p50ms": 400.096,
+          "p99ms": 537.38
+        },
+        "tag:medium": {
+          "questions": 31,
+          "hit@5": 0.935,
+          "hit@10": 0.935,
+          "hit@20": 0.935,
+          "articleRecall@5": 0.71,
+          "articleRecall@10": 0.758,
+          "articleRecall@20": 0.758,
+          "mrr": 0.746,
+          "p50ms": 400.096,
+          "p99ms": 474.23
+        },
+        "tag:hard": {
+          "questions": 15,
+          "hit@5": 0.867,
+          "hit@10": 0.933,
+          "hit@20": 0.933,
+          "articleRecall@5": 0.7,
+          "articleRecall@10": 0.767,
+          "articleRecall@20": 0.8,
+          "mrr": 0.571,
+          "p50ms": 389.576,
+          "p99ms": 426.876
+        },
+        "tag:easy": {
+          "questions": 9,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.722,
+          "articleRecall@10": 0.833,
+          "articleRecall@20": 0.889,
+          "mrr": 0.926,
+          "p50ms": 458.357,
+          "p99ms": 537.38
+        },
+        "source:kilt_nq": {
+          "questions": 75,
+          "hit@5": 0.653,
+          "hit@10": 0.827,
+          "hit@20": 0.88,
+          "articleRecall@5": 0.853,
+          "articleRecall@10": 0.94,
+          "articleRecall@20": 0.967,
+          "mrr": 0.481,
+          "p50ms": 251.273,
+          "p99ms": 501.834
+        },
+        "tag:single_hop": {
+          "questions": 104,
+          "hit@5": 0.74,
+          "hit@10": 0.875,
+          "hit@20": 0.913,
+          "articleRecall@5": 0.885,
+          "articleRecall@10": 0.957,
+          "articleRecall@20": 0.976,
+          "mrr": 0.566,
+          "p50ms": 242.791,
+          "p99ms": 438.696
+        },
+        "source:handwritten": {
+          "questions": 30,
+          "hit@5": 0.967,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.967,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.792,
+          "p50ms": 227.297,
+          "p99ms": 400.157
+        },
+        "tag:region": {
+          "questions": 16,
+          "hit@5": 0.938,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.938,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.792,
+          "p50ms": 227.297,
+          "p99ms": 364.131
+        },
+        "tag:recent": {
+          "questions": 14,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.929,
+          "p50ms": 240.348,
+          "p99ms": 400.157
+        },
+        "tag:paraphrase": {
+          "questions": 2,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.417,
+          "p50ms": 394.756,
+          "p99ms": 394.756
+        }
+      }
+    },
+    {
+      "variant": "hybrid, rrf k=10",
+      "options": {
+        "headingWeight": 2,
+        "commonTermShare": null
+      },
+      "fusion": {
+        "mode": "hybrid",
+        "k": 10,
+        "candidates": 50
+      },
+      "results": {
+        "all": {
+          "questions": 160,
+          "hit@5": 0.863,
+          "hit@10": 0.9,
+          "hit@20": 0.925,
+          "articleRecall@5": 0.847,
+          "articleRecall@10": 0.887,
+          "articleRecall@20": 0.906,
+          "mrr": 0.634,
+          "p50ms": 288.08,
+          "p99ms": 495.011
+        },
+        "source:hotpotqa": {
+          "questions": 55,
+          "hit@5": 0.945,
+          "hit@10": 0.945,
+          "hit@20": 0.945,
+          "articleRecall@5": 0.718,
+          "articleRecall@10": 0.755,
+          "articleRecall@20": 0.773,
+          "mrr": 0.725,
+          "p50ms": 400.788,
+          "p99ms": 495.011
+        },
+        "tag:multi_hop": {
+          "questions": 56,
+          "hit@5": 0.946,
+          "hit@10": 0.946,
+          "hit@20": 0.946,
+          "articleRecall@5": 0.723,
+          "articleRecall@10": 0.759,
+          "articleRecall@20": 0.777,
+          "mrr": 0.73,
+          "p50ms": 400.788,
+          "p99ms": 495.011
+        },
+        "tag:bridge": {
+          "questions": 55,
+          "hit@5": 0.945,
+          "hit@10": 0.945,
+          "hit@20": 0.945,
+          "articleRecall@5": 0.718,
+          "articleRecall@10": 0.755,
+          "articleRecall@20": 0.773,
+          "mrr": 0.725,
+          "p50ms": 400.788,
+          "p99ms": 495.011
+        },
+        "tag:medium": {
+          "questions": 31,
+          "hit@5": 0.935,
+          "hit@10": 0.935,
+          "hit@20": 0.935,
+          "articleRecall@5": 0.694,
+          "articleRecall@10": 0.742,
+          "articleRecall@20": 0.742,
+          "mrr": 0.739,
+          "p50ms": 402.654,
+          "p99ms": 455.393
+        },
+        "tag:hard": {
+          "questions": 15,
+          "hit@5": 0.933,
+          "hit@10": 0.933,
+          "hit@20": 0.933,
+          "articleRecall@5": 0.733,
+          "articleRecall@10": 0.733,
+          "articleRecall@20": 0.767,
+          "mrr": 0.574,
+          "p50ms": 398.101,
+          "p99ms": 454.736
+        },
+        "tag:easy": {
+          "questions": 9,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.778,
+          "articleRecall@10": 0.833,
+          "articleRecall@20": 0.889,
+          "mrr": 0.926,
+          "p50ms": 472.92,
+          "p99ms": 495.011
+        },
+        "source:kilt_nq": {
+          "questions": 75,
+          "hit@5": 0.747,
+          "hit@10": 0.827,
+          "hit@20": 0.88,
+          "articleRecall@5": 0.88,
+          "articleRecall@10": 0.94,
+          "articleRecall@20": 0.967,
+          "mrr": 0.502,
+          "p50ms": 238.953,
+          "p99ms": 425.406
+        },
+        "tag:single_hop": {
+          "questions": 104,
+          "hit@5": 0.817,
+          "hit@10": 0.875,
+          "hit@20": 0.913,
+          "articleRecall@5": 0.913,
+          "articleRecall@10": 0.957,
+          "articleRecall@20": 0.976,
+          "mrr": 0.582,
+          "p50ms": 238.953,
+          "p99ms": 425.406
+        },
+        "source:handwritten": {
+          "questions": 30,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.796,
+          "p50ms": 240.106,
+          "p99ms": 518.033
+        },
+        "tag:region": {
+          "questions": 16,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.794,
+          "p50ms": 240.106,
+          "p99ms": 406.023
+        },
+        "tag:recent": {
+          "questions": 14,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.929,
+          "p50ms": 240.106,
+          "p99ms": 404.998
+        },
+        "tag:paraphrase": {
+          "questions": 2,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.417,
+          "p50ms": 424.722,
+          "p99ms": 424.722
+        }
+      }
+    },
+    {
+      "variant": "hybrid, rrf k=30",
+      "options": {
+        "headingWeight": 2,
+        "commonTermShare": null
+      },
+      "fusion": {
+        "mode": "hybrid",
+        "k": 30,
+        "candidates": 50
+      },
+      "results": {
+        "all": {
+          "questions": 160,
+          "hit@5": 0.819,
+          "hit@10": 0.887,
+          "hit@20": 0.925,
+          "articleRecall@5": 0.834,
+          "articleRecall@10": 0.887,
+          "articleRecall@20": 0.912,
+          "mrr": 0.628,
+          "p50ms": 284.242,
+          "p99ms": 535.658
+        },
+        "source:hotpotqa": {
+          "questions": 55,
+          "hit@5": 0.927,
+          "hit@10": 0.945,
+          "hit@20": 0.945,
+          "articleRecall@5": 0.718,
+          "articleRecall@10": 0.773,
+          "articleRecall@20": 0.791,
+          "mrr": 0.732,
+          "p50ms": 408.983,
+          "p99ms": 596.473
+        },
+        "tag:multi_hop": {
+          "questions": 56,
+          "hit@5": 0.929,
+          "hit@10": 0.946,
+          "hit@20": 0.946,
+          "articleRecall@5": 0.723,
+          "articleRecall@10": 0.777,
+          "articleRecall@20": 0.795,
+          "mrr": 0.737,
+          "p50ms": 408.983,
+          "p99ms": 596.473
+        },
+        "tag:bridge": {
+          "questions": 55,
+          "hit@5": 0.927,
+          "hit@10": 0.945,
+          "hit@20": 0.945,
+          "articleRecall@5": 0.718,
+          "articleRecall@10": 0.773,
+          "articleRecall@20": 0.791,
+          "mrr": 0.732,
+          "p50ms": 408.983,
+          "p99ms": 596.473
+        },
+        "tag:medium": {
+          "questions": 31,
+          "hit@5": 0.935,
+          "hit@10": 0.935,
+          "hit@20": 0.935,
+          "articleRecall@5": 0.726,
+          "articleRecall@10": 0.758,
+          "articleRecall@20": 0.758,
+          "mrr": 0.754,
+          "p50ms": 414.672,
+          "p99ms": 476.582
+        },
+        "tag:hard": {
+          "questions": 15,
+          "hit@5": 0.867,
+          "hit@10": 0.933,
+          "hit@20": 0.933,
+          "articleRecall@5": 0.7,
+          "articleRecall@10": 0.767,
+          "articleRecall@20": 0.8,
+          "mrr": 0.572,
+          "p50ms": 391.787,
+          "p99ms": 437.988
+        },
+        "tag:easy": {
+          "questions": 9,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.722,
+          "articleRecall@10": 0.833,
+          "articleRecall@20": 0.889,
+          "mrr": 0.926,
+          "p50ms": 460.269,
+          "p99ms": 596.473
+        },
+        "source:kilt_nq": {
+          "questions": 75,
+          "hit@5": 0.667,
+          "hit@10": 0.8,
+          "hit@20": 0.88,
+          "articleRecall@5": 0.853,
+          "articleRecall@10": 0.927,
+          "articleRecall@20": 0.967,
+          "mrr": 0.485,
+          "p50ms": 259.965,
+          "p99ms": 420.167
+        },
+        "tag:single_hop": {
+          "questions": 104,
+          "hit@5": 0.76,
+          "hit@10": 0.856,
+          "hit@20": 0.913,
+          "articleRecall@5": 0.894,
+          "articleRecall@10": 0.947,
+          "articleRecall@20": 0.976,
+          "mrr": 0.569,
+          "p50ms": 247.424,
+          "p99ms": 400.489
+        },
+        "source:handwritten": {
+          "questions": 30,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.793,
+          "p50ms": 234.466,
+          "p99ms": 395.541
+        },
+        "tag:region": {
+          "questions": 16,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.794,
+          "p50ms": 234.466,
+          "p99ms": 388.621
+        },
+        "tag:recent": {
+          "questions": 14,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.929,
+          "p50ms": 247.424,
+          "p99ms": 395.541
+        },
+        "tag:paraphrase": {
+          "questions": 2,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.417,
+          "p50ms": 395.541,
+          "p99ms": 395.541
+        }
+      }
+    },
+    {
+      "variant": "hybrid, rrf k=120",
+      "options": {
+        "headingWeight": 2,
+        "commonTermShare": null
+      },
+      "fusion": {
+        "mode": "hybrid",
+        "k": 120,
+        "candidates": 50
+      },
+      "results": {
+        "all": {
+          "questions": 160,
+          "hit@5": 0.806,
+          "hit@10": 0.9,
+          "hit@20": 0.925,
+          "articleRecall@5": 0.825,
+          "articleRecall@10": 0.894,
+          "articleRecall@20": 0.912,
+          "mrr": 0.623,
+          "p50ms": 296.621,
+          "p99ms": 596.513
+        },
+        "source:hotpotqa": {
+          "questions": 55,
+          "hit@5": 0.927,
+          "hit@10": 0.945,
+          "hit@20": 0.945,
+          "articleRecall@5": 0.709,
+          "articleRecall@10": 0.773,
+          "articleRecall@20": 0.791,
+          "mrr": 0.729,
+          "p50ms": 415.779,
+          "p99ms": 650.012
+        },
+        "tag:multi_hop": {
+          "questions": 56,
+          "hit@5": 0.929,
+          "hit@10": 0.946,
+          "hit@20": 0.946,
+          "articleRecall@5": 0.714,
+          "articleRecall@10": 0.777,
+          "articleRecall@20": 0.795,
+          "mrr": 0.734,
+          "p50ms": 415.779,
+          "p99ms": 650.012
+        },
+        "tag:bridge": {
+          "questions": 55,
+          "hit@5": 0.927,
+          "hit@10": 0.945,
+          "hit@20": 0.945,
+          "articleRecall@5": 0.709,
+          "articleRecall@10": 0.773,
+          "articleRecall@20": 0.791,
+          "mrr": 0.729,
+          "p50ms": 415.779,
+          "p99ms": 650.012
+        },
+        "tag:medium": {
+          "questions": 31,
+          "hit@5": 0.935,
+          "hit@10": 0.935,
+          "hit@20": 0.935,
+          "articleRecall@5": 0.71,
+          "articleRecall@10": 0.758,
+          "articleRecall@20": 0.758,
+          "mrr": 0.748,
+          "p50ms": 415.605,
+          "p99ms": 596.513
+        },
+        "tag:hard": {
+          "questions": 15,
+          "hit@5": 0.867,
+          "hit@10": 0.933,
+          "hit@20": 0.933,
+          "articleRecall@5": 0.7,
+          "articleRecall@10": 0.767,
+          "articleRecall@20": 0.8,
+          "mrr": 0.571,
+          "p50ms": 402.325,
+          "p99ms": 650.012
+        },
+        "tag:easy": {
+          "questions": 9,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.722,
+          "articleRecall@10": 0.833,
+          "articleRecall@20": 0.889,
+          "mrr": 0.926,
+          "p50ms": 439.546,
+          "p99ms": 586.446
+        },
+        "source:kilt_nq": {
+          "questions": 75,
+          "hit@5": 0.653,
+          "hit@10": 0.827,
+          "hit@20": 0.88,
+          "articleRecall@5": 0.853,
+          "articleRecall@10": 0.94,
+          "articleRecall@20": 0.967,
+          "mrr": 0.478,
+          "p50ms": 257.753,
+          "p99ms": 469.51
+        },
+        "tag:single_hop": {
+          "questions": 104,
+          "hit@5": 0.74,
+          "hit@10": 0.875,
+          "hit@20": 0.913,
+          "articleRecall@5": 0.885,
+          "articleRecall@10": 0.957,
+          "articleRecall@20": 0.976,
+          "mrr": 0.563,
+          "p50ms": 246.033,
+          "p99ms": 453.356
+        },
+        "source:handwritten": {
+          "questions": 30,
+          "hit@5": 0.967,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.967,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.79,
+          "p50ms": 221.778,
+          "p99ms": 444.998
+        },
+        "tag:region": {
+          "questions": 16,
+          "hit@5": 0.938,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.938,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.789,
+          "p50ms": 212.689,
+          "p99ms": 393.562
+        },
+        "tag:recent": {
+          "questions": 14,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.929,
+          "p50ms": 239.5,
+          "p99ms": 434.044
+        },
+        "tag:paraphrase": {
+          "questions": 2,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.417,
+          "p50ms": 444.998,
+          "p99ms": 444.998
+        }
+      }
+    },
+    {
+      "variant": "hybrid, rrf k=60, bm25 requires a word in <2% of passages",
+      "options": {
+        "headingWeight": 2,
+        "commonTermShare": 0.02
+      },
+      "fusion": {
+        "mode": "hybrid",
+        "k": 60,
+        "candidates": 50
+      },
+      "results": {
+        "all": {
+          "questions": 160,
+          "hit@5": 0.787,
+          "hit@10": 0.863,
+          "hit@20": 0.919,
+          "articleRecall@5": 0.819,
+          "articleRecall@10": 0.878,
+          "articleRecall@20": 0.916,
+          "mrr": 0.602,
+          "p50ms": 115.808,
+          "p99ms": 296.193
+        },
+        "source:hotpotqa": {
+          "questions": 55,
+          "hit@5": 0.909,
+          "hit@10": 0.927,
+          "hit@20": 0.945,
+          "articleRecall@5": 0.673,
+          "articleRecall@10": 0.764,
+          "articleRecall@20": 0.8,
+          "mrr": 0.706,
+          "p50ms": 121.35,
+          "p99ms": 219.005
+        },
+        "tag:multi_hop": {
+          "questions": 56,
+          "hit@5": 0.911,
+          "hit@10": 0.929,
+          "hit@20": 0.946,
+          "articleRecall@5": 0.679,
+          "articleRecall@10": 0.768,
+          "articleRecall@20": 0.804,
+          "mrr": 0.711,
+          "p50ms": 123.449,
+          "p99ms": 219.005
+        },
+        "tag:bridge": {
+          "questions": 55,
+          "hit@5": 0.909,
+          "hit@10": 0.927,
+          "hit@20": 0.945,
+          "articleRecall@5": 0.673,
+          "articleRecall@10": 0.764,
+          "articleRecall@20": 0.8,
+          "mrr": 0.706,
+          "p50ms": 121.35,
+          "p99ms": 219.005
+        },
+        "tag:medium": {
+          "questions": 31,
+          "hit@5": 0.935,
+          "hit@10": 0.935,
+          "hit@20": 0.935,
+          "articleRecall@5": 0.677,
+          "articleRecall@10": 0.774,
+          "articleRecall@20": 0.79,
+          "mrr": 0.689,
+          "p50ms": 117.999,
+          "p99ms": 218.626
+        },
+        "tag:hard": {
+          "questions": 15,
+          "hit@5": 0.8,
+          "hit@10": 0.867,
+          "hit@20": 0.933,
+          "articleRecall@5": 0.633,
+          "articleRecall@10": 0.7,
+          "articleRecall@20": 0.767,
+          "mrr": 0.607,
+          "p50ms": 119.142,
+          "p99ms": 201.693
+        },
+        "tag:easy": {
+          "questions": 9,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 0.722,
+          "articleRecall@10": 0.833,
+          "articleRecall@20": 0.889,
+          "mrr": 0.926,
+          "p50ms": 155.582,
+          "p99ms": 219.005
+        },
+        "source:kilt_nq": {
+          "questions": 75,
+          "hit@5": 0.64,
+          "hit@10": 0.773,
+          "hit@20": 0.867,
+          "articleRecall@5": 0.867,
+          "articleRecall@10": 0.927,
+          "articleRecall@20": 0.967,
+          "mrr": 0.457,
+          "p50ms": 101.948,
+          "p99ms": 419.46
+        },
+        "tag:single_hop": {
+          "questions": 104,
+          "hit@5": 0.721,
+          "hit@10": 0.827,
+          "hit@20": 0.904,
+          "articleRecall@5": 0.894,
+          "articleRecall@10": 0.938,
+          "articleRecall@20": 0.976,
+          "mrr": 0.543,
+          "p50ms": 109.171,
+          "p99ms": 296.193
+        },
+        "source:handwritten": {
+          "questions": 30,
+          "hit@5": 0.933,
+          "hit@10": 0.967,
+          "hit@20": 1,
+          "articleRecall@5": 0.967,
+          "articleRecall@10": 0.967,
+          "articleRecall@20": 1,
+          "mrr": 0.775,
+          "p50ms": 118.544,
+          "p99ms": 195.231
+        },
+        "tag:region": {
+          "questions": 16,
+          "hit@5": 0.875,
+          "hit@10": 0.938,
+          "hit@20": 1,
+          "articleRecall@5": 0.938,
+          "articleRecall@10": 0.938,
+          "articleRecall@20": 1,
+          "mrr": 0.765,
+          "p50ms": 115.966,
+          "p99ms": 153.895
+        },
+        "tag:recent": {
+          "questions": 14,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.929,
+          "p50ms": 120.855,
+          "p99ms": 166.954
+        },
+        "tag:paraphrase": {
+          "questions": 2,
+          "hit@5": 1,
+          "hit@10": 1,
+          "hit@20": 1,
+          "articleRecall@5": 1,
+          "articleRecall@10": 1,
+          "articleRecall@20": 1,
+          "mrr": 0.417,
+          "p50ms": 195.231,
+          "p99ms": 195.231
         }
       }
     }

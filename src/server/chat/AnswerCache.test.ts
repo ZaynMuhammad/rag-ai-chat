@@ -485,7 +485,10 @@ describe("answerCacheLayer", () => {
     Effect.gen(function* () {
       const uncached = yield* ask(question("Who created Tetris?")).pipe(
         Effect.provide(
-          realChat.pipe(Layer.provide(Retriever.layer), Layer.provide(fixture)),
+          realChat.pipe(
+            Layer.provide(Retriever.layerBm25),
+            Layer.provide(fixture),
+          ),
         ),
       );
       const cached = yield* Effect.gen(function* () {
@@ -496,7 +499,7 @@ describe("answerCacheLayer", () => {
         Effect.provide(
           answerCacheLayer(options).pipe(
             Layer.provide(realChat),
-            Layer.provide(Retriever.layer),
+            Layer.provide(Retriever.layerBm25),
             Layer.provide(fixture),
           ),
         ),

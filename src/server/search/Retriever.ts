@@ -2,13 +2,14 @@ import { Config, Context, Effect, Layer, Option, Schema } from "effect";
 import { SqlClient, SqlSchema } from "effect/sql";
 import { Scope, scopeConditions } from "@/server/games/Scope";
 import { words } from "@/corpus/Terms";
-import { RetrievedPassage } from "./Passage";
+import { DenseIndex } from "./DenseIndex";
+import { Embedder } from "./Embedder";
+import { defaultFusionK, reciprocalRankFusion } from "./Fusion";
+import { RetrievedPassage, type SearchRequest } from "./Passage";
 
-export interface SearchRequest {
-  readonly query: string;
-  readonly scope: Scope;
-  readonly limit: number;
-}
+export const RetrievalMode = Schema.Literals(["bm25", "dense", "hybrid"]);
+export type RetrievalMode = typeof RetrievalMode.Type;
+export const defaultRetrievalMode: RetrievalMode = "dense";
 
 const stopWords = new Set(
   (
@@ -55,11 +56,29 @@ export const defaultRetrieverOptions: RetrieverOptions = {
   commonTermShare: null,
 };
 
+export interface FusionOptions {
+  readonly mode: "dense" | "hybrid";
+  readonly k: number;
+  readonly candidates: number;
+}
+
+export const defaultFusionOptions: FusionOptions = {
+  mode: "hybrid",
+  k: defaultFusionK,
+  candidates: 50,
+};
+
 const SearchRow = Schema.Struct({
   match: Schema.String,
   limit: Schema.Number,
   scope: Scope,
 });
+
+const hasEmbeddings = Effect.gen(function* () {
+  const sql = yield* SqlClient.SqlClient;
+  const rows = yield* sql`SELECT 1 FROM passage_embeddings LIMIT 1`;
+  return rows.length > 0;
+}).pipe(Effect.orElseSucceed(() => false));
 
 export class Retriever extends Context.Service<
   Retriever,
@@ -119,16 +138,74 @@ export class Retriever extends Context.Service<
       return Retriever.of({ search });
     });
 
-  static readonly layer = Layer.effect(
-    Retriever,
+  static readonly makeFused = (
+    options: RetrieverOptions,
+    fusion: FusionOptions,
+  ) =>
     Effect.gen(function* () {
+      const lexical = yield* Retriever.make(options);
+      const dense = yield* DenseIndex;
+
+      const hybrid = Effect.fnUntraced(function* (request: SearchRequest) {
+        const candidates = {
+          ...request,
+          limit: Math.max(request.limit, fusion.candidates),
+        };
+        const [semantic, keyword] = yield* Effect.all(
+          [dense.search(candidates), lexical.search(candidates)],
+          { concurrency: "unbounded" },
+        );
+        return reciprocalRankFusion(
+          [keyword, semantic],
+          (passage) => passage.id,
+          fusion.k,
+        ).slice(0, request.limit);
+      });
+
+      const search = Effect.fn("Retriever.search")(function* (
+        request: SearchRequest,
+      ) {
+        if (searchTerms(request.query).length === 0) return [];
+        return fusion.mode === "dense"
+          ? yield* dense.search(request)
+          : yield* hybrid(request);
+      });
+
+      return Retriever.of({ search });
+    });
+
+  static readonly layerBm25 = Layer.effect(
+    Retriever,
+    Retriever.make(defaultRetrieverOptions),
+  );
+
+  static readonly layer = Layer.unwrap(
+    Effect.gen(function* () {
+      const mode = yield* Config.Literals(
+        RetrievalMode.literals,
+        "RETRIEVAL_MODE",
+      ).pipe(Config.withDefault(defaultRetrievalMode));
       const commonTermShare = yield* Config.option(
         Config.Number("RETRIEVAL_COMMON_WORD_SHARE"),
       );
-      return yield* Retriever.make({
+      const options = {
         ...defaultRetrieverOptions,
         commonTermShare: Option.getOrNull(commonTermShare),
-      });
+      };
+      const dense = mode !== "bm25" && (yield* hasEmbeddings);
+      if (mode !== "bm25" && !dense) {
+        yield* Effect.logWarning(
+          `RETRIEVAL_MODE=${mode}, but the corpus has no passage embeddings. Using bm25 until bun run corpus:embed has run.`,
+        );
+      }
+      return mode === "bm25" || !dense
+        ? Layer.effect(Retriever, Retriever.make(options))
+        : Layer.effect(
+            Retriever,
+            Retriever.makeFused(options, { ...defaultFusionOptions, mode }),
+          ).pipe(
+            Layer.provide(DenseIndex.layer.pipe(Layer.provide(Embedder.layer))),
+          );
     }),
   );
 }
