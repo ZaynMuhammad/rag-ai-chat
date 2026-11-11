@@ -27,7 +27,8 @@
     "test:go": "cd loadgen && go test -race ./...",
     "bench:pro": "bun build scripts/pro/bench-signing.ts --target=node --outfile=.next/bench-signing.mjs && node .next/bench-signing.mjs",
     "load:outage": "bun scripts/load/outage-chat.ts",
-    "load:spike": "bun scripts/load/spike-chat.ts"
+    "load:spike": "bun scripts/load/spike-chat.ts",
+    "load:zipf": "bun scripts/load/zipf-chat.ts"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",

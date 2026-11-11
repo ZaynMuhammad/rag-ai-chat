@@ -46,6 +46,14 @@ The extractive mock quotes retrieved sentences verbatim and cites each one, so c
 | Errors                                                    | 0                      | 0                          |
 | Time to first token p50 / p95 / p99                       | 992 / 7,608 / 8,969 ms | 117 / 436 / 608 ms         |
 
+| Load: 2 chats/s for 90 s, production build, mock provider, full BM25  | before the answer cache | with it                     |
+| --------------------------------------------------------------------- | ----------------------- | --------------------------- |
+| Zipf (s = 1 over 180 questions): time to first token p50 / p95 / p99  | 409 / 1,100 / 1,303 ms  | 9 / 565 / 890 ms            |
+| Zipf: total p50 / p99                                                 | 4,406 / 10,269 ms       | 10 / 4,513 ms               |
+| Zipf: answered without calling a model                                | 0%                      | 61% (109 hits, 1 coalesced) |
+| Uniform (180 distinct questions): time to first token p50 / p95 / p99 | 291 / 902 / 1,024 ms    | 284 / 1,056 / 1,360 ms      |
+| Errors                                                                | 0                       | 0                           |
+
 | Outage: 4 chats/s for 60 s, production build; the primary hangs at 15 s, fails at 30 s, recovers at 45 s | before: retry every request | circuit breaker + 2 s first-token deadline       |
 | -------------------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------------------------ |
 | Errors                                                                                                   | 26.3%, all stuck past 30 s  | 0                                                |
@@ -62,6 +70,7 @@ wikimedia/structured-wikipedia ──► sections ──► passages (≤ 400 to
 
 question + scope (region, years, or one game)
   ──► anonymous session check and rate limit
+  ──► answer cache: replay a cached answer, or join one still streaming
   ──► BM25 over passages in scope (top 6)
   ──► Citations event ──► model stream ──► Delta events ──► Done { model }
 ```
@@ -71,6 +80,8 @@ question + scope (region, years, or one game)
 - **Retrieval** is BM25 in SQLite FTS5 (porter stemming, diacritics folded), filtered by the chat's scope. It reads the corpus through `node:sqlite`, so there is no native addon. [`Retriever.ts`](src/server/search/Retriever.ts)
 - **Grounded chat** sends the retrieved passages first, then streams the answer. When nothing in scope matches, it says so without calling a model. [`GroundedChat.ts`](src/server/chat/GroundedChat.ts)
 - **Failover.** Providers form an Effect `ExecutionPlan`. A provider that fails, or sends no token within `FIRST_TOKEN_TIMEOUT` (2 s), hands over to the next; once tokens have streamed, a failure is reported rather than restarted. A per-provider circuit breaker opens after 5 consecutive failures or half the calls in 30 s, and requests then skip that provider without calling it. After 10 s one probe goes through, and a success closes it. The last provider in the plan is never cut off, since nothing is left to fail over to. State is in memory, per process, and labeled only by provider. [`CircuitBreaker.ts`](src/server/provider/CircuitBreaker.ts)
+- **Answer cache.** A first-turn question is keyed by an HMAC of the normalized question (NFKC, case, spacing, end punctuation), its scope, the model that answers it, the configured models, and the corpus version. Identical questions in flight share one upstream stream: a late joiner replays what was sent, then follows the live tail, and the stream finishes even if the client that started it leaves. Only complete answers written by that model without a provider failure are kept, in an LRU of 1,000 entries for 10 minutes. It wraps `GroundedChat` as a layer. [`AnswerCache.ts`](src/server/chat/AnswerCache.ts)
+- **Metrics.** `GET /api/metrics` serves Prometheus text from Effect `Metric`: time to first token, retrieval latency, cache hits, misses and coalesced joins, chat outcomes, and answers by model. [`GatewayMetrics.ts`](src/server/metrics/GatewayMetrics.ts)
 - **Providers.** With no keys, the only provider is `mock-extractive`, which quotes the best-matching retrieved sentences with citations. Dev, tests, and load tests never spend money. With `ANTHROPIC_API_KEY`, Claude Haiku 5.5 answers at low effort. With `OPENAI_MODEL`, any OpenAI-compatible endpoint joins the plan: OpenAI, Groq, Together, or a local Ollama. The mock is always the last fallback. `GET /api/models` lists the configured models in fallback order, and a chat may pick one with `model`: it goes first, and the rest stay as fallback. [`ChatModels.ts`](src/server/provider/ChatModels.ts)
 
 ## Privacy
@@ -79,6 +90,8 @@ question + scope (region, years, or one game)
 - **Chats stay on the device.** The sidebar's chat history lives in the browser's `localStorage`. The server never receives the list.
 - **No logs.** Nothing logs or stores an IP, user agent, token, or question. Lint rejects code that reads identifying headers.
 - **Bounded abuse.** Each token gets 10 chats a minute. Global caps on chats and on new tokens bound abuse without knowing who anyone is.
+- **Shared cache, not personal.** The cache never sees the session token or headers. Its keys are HMACs under a per-process secret, so a leaked key can't be checked against guessed questions. Hits still count against the rate limit.
+- **Aggregate metrics.** Metric labels come from a fixed set (`outcome`, `result`, `model`) with bounded values. A test checks that no question or token reaches `/api/metrics`. Set `METRICS_TOKEN` to require it as a bearer token.
 - **Clean errors.** Provider errors never echo the question back to the client. A test checks this.
 
 ## Pro without identity
@@ -136,6 +149,7 @@ bun run dev                  # http://localhost:3000
 | `RETRIEVAL_COMMON_WORD_SHARE` | unset                       | e.g. `0.1`: every match needs a word found in under 10% of passages (faster, see Numbers) |
 | `SESSION_SECRET`              | random per process          | HMAC key for session tokens; set it when running more than one process                    |
 | `CORPUS_DATABASE`             | `data/corpus/games.sqlite`  | Corpus location                                                                           |
+| `METRICS_TOKEN`               | unset                       | Set: `/api/metrics` requires it as a bearer token                                         |
 
 ## Evals and load
 
@@ -147,6 +161,7 @@ bun run evals:answers --check  # fails if any metric drops more than 0.02 in a g
 EVAL_PROVIDER=anthropic EVAL_LIMIT=30 bun run evals:answers --estimate  # cost ceiling for a real-model run, no calls made
 bun run build && bun run start &
 LOAD_BASE_URL=http://localhost:3000 LOAD_RPS=4 LOAD_SECONDS=60 bun run load:steady
+LOAD_BASE_URL=http://localhost:3000 LOAD_RPS=2 LOAD_SECONDS=90 bun run load:zipf   # LOAD_ZIPF_EXPONENT=1, LOAD_SEED=1
 MOCK_PRIMARY=ok@15,hang@15,outage@15,ok bun run start &   # restart with a misbehaving primary
 LOAD_BASE_URL=http://localhost:3000 bun run load:outage   # per-5 s buckets: errors, TTFT, which model answered
 LOAD_BASE_URL=http://localhost:3000 bun run load:spike    # 4 chats/s with a 10 s burst at 5x

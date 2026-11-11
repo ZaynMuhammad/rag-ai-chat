@@ -71,7 +71,7 @@ const event = (value: ChatEvent) => Stream.succeed(value);
 export class GroundedChat extends Context.Service<
   GroundedChat,
   {
-    readonly models: ReadonlyArray<ChatModelInfo>;
+    readonly models: Arr.NonEmptyReadonlyArray<ChatModelInfo>;
     stream(
       request: ChatRequest,
     ): Effect.Effect<Stream.Stream<ChatEvent>, UnknownModel>;
@@ -171,7 +171,7 @@ export class GroundedChat extends Context.Service<
         });
 
         return GroundedChat.of({
-          models: providers.map(({ id, provider }) => ({ id, provider })),
+          models: Arr.map(providers, ({ id, provider }) => ({ id, provider })),
           stream: (request) =>
             Effect.map(planFor(request.model), (plan) =>
               Stream.unwrap(respond(request, plan)),

@@ -1,8 +1,16 @@
 import { Effect, Layer, ManagedRuntime } from "effect";
+import {
+  answerCacheDefaults,
+  answerCacheLayer,
+} from "@/server/chat/AnswerCache";
 import { GroundedChat } from "@/server/chat/GroundedChat";
 import { CorpusDatabase } from "@/server/corpus/CorpusDatabase";
 import { AnonymousSessions } from "@/server/gateway/AnonymousSessions";
 import { GameCatalog } from "@/server/games/GameCatalog";
+import {
+  observedChat,
+  observedRetrieval,
+} from "@/server/metrics/GatewayMetrics";
 import { ProCredentials } from "@/server/pro/ProCredentials";
 import {
   chatProviders,
@@ -13,7 +21,12 @@ import { Retriever } from "@/server/search/Retriever";
 
 const Chat = Layer.unwrap(
   Effect.gen(function* () {
-    return GroundedChat.layer(yield* chatProviders, yield* firstTokenDeadline);
+    return observedChat.pipe(
+      Layer.provide(answerCacheLayer(answerCacheDefaults)),
+      Layer.provide(
+        GroundedChat.layer(yield* chatProviders, yield* firstTokenDeadline),
+      ),
+    );
   }),
 ).pipe(Layer.provide(CircuitBreaker.layer));
 
@@ -23,7 +36,7 @@ const AppLayer = Layer.mergeAll(
   ProCredentials.layer,
 ).pipe(
   Layer.provideMerge(AnonymousSessions.layer),
-  Layer.provideMerge(Retriever.layer),
+  Layer.provideMerge(observedRetrieval.pipe(Layer.provide(Retriever.layer))),
   Layer.provide(CorpusDatabase),
   Layer.orDie,
 );
