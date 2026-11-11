@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChatPanel, type CiteHandler } from "@/components/ChatPanel";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   SidebarInset,
   SidebarProvider,
@@ -104,6 +105,7 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
           <p className="ml-auto hidden shrink-0 text-xs text-muted-foreground md:block">
             Drag to spin · scroll to zoom · click a pin
           </p>
+          <ThemeToggle />
         </header>
         <ChatPanel
           key={chatId}

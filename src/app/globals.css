@@ -2,73 +2,57 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (@media (prefers-color-scheme: dark));
-
-:root {
-  --radius: 0.625rem;
-  --background: #fbfaf8;
-  --foreground: #1d1b19;
-  --card: #ffffff;
-  --card-foreground: #1d1b19;
-  --popover: #ffffff;
-  --popover-foreground: #1d1b19;
-  --primary: #c2410c;
-  --primary-foreground: #ffffff;
-  --secondary: #f3f0eb;
-  --secondary-foreground: #1d1b19;
-  --muted: #f3f0eb;
-  --muted-foreground: #6b655e;
-  --accent: #f3f0eb;
-  --accent-foreground: #1d1b19;
-  --destructive: #dc2626;
-  --border: #e6e1da;
-  --input: #e6e1da;
-  --ring: #c2410c;
-  --globe-ocean: #e9eef3;
-  --globe-land: #d6d0c6;
-  --globe-graticule: #d5dde5;
-  --sidebar: #f5f2ee;
-  --sidebar-foreground: #1d1b19;
-  --sidebar-primary: #c2410c;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ebe6df;
-  --sidebar-accent-foreground: #1d1b19;
-  --sidebar-border: #e6e1da;
-  --sidebar-ring: #c2410c;
+@custom-variant dark {
+  &:where([data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #141312;
-    --foreground: #f1ede7;
-    --card: #1c1b19;
-    --card-foreground: #f1ede7;
-    --popover: #1c1b19;
-    --popover-foreground: #f1ede7;
-    --primary: #fb923c;
-    --primary-foreground: #1d1b19;
-    --secondary: #262421;
-    --secondary-foreground: #f1ede7;
-    --muted: #262421;
-    --muted-foreground: #a39d95;
-    --accent: #2b2926;
-    --accent-foreground: #f1ede7;
-    --destructive: #f87171;
-    --border: #34312d;
-    --input: #3d3a35;
-    --ring: #fb923c;
-    --globe-ocean: #1a2129;
-    --globe-land: #3a3631;
-    --globe-graticule: #232c36;
-    --sidebar: #181715;
-    --sidebar-foreground: #f1ede7;
-    --sidebar-primary: #fb923c;
-    --sidebar-primary-foreground: #1d1b19;
-    --sidebar-accent: #262421;
-    --sidebar-accent-foreground: #f1ede7;
-    --sidebar-border: #34312d;
-    --sidebar-ring: #fb923c;
-  }
+:root {
+  color-scheme: light dark;
+  --radius: 0.625rem;
+  --background: light-dark(#eff1f5, #1e1e2e);
+  --foreground: light-dark(#4c4f69, #cdd6f4);
+  --card: light-dark(#e6e9ef, #181825);
+  --card-foreground: light-dark(#4c4f69, #cdd6f4);
+  --popover: light-dark(#e6e9ef, #181825);
+  --popover-foreground: light-dark(#4c4f69, #cdd6f4);
+  --primary: light-dark(#8839ef, #cba6f7);
+  --primary-foreground: light-dark(#eff1f5, #11111b);
+  --secondary: light-dark(#dce0e8, #313244);
+  --secondary-foreground: light-dark(#4c4f69, #cdd6f4);
+  --muted: light-dark(#dce0e8, #313244);
+  --muted-foreground: light-dark(#6c6f85, #a6adc8);
+  --accent: light-dark(#dce0e8, #313244);
+  --accent-foreground: light-dark(#4c4f69, #cdd6f4);
+  --destructive: light-dark(#d20f39, #f38ba8);
+  --border: light-dark(#ccd0da, #313244);
+  --input: light-dark(#bcc0cc, #45475a);
+  --ring: light-dark(#8839ef, #cba6f7);
+  --globe-ocean: light-dark(#dce0e8, #11111b);
+  --globe-land: light-dark(#bcc0cc, #45475a);
+  --globe-graticule: light-dark(#ccd0da, #313244);
+  --sidebar: light-dark(#e6e9ef, #181825);
+  --sidebar-foreground: light-dark(#4c4f69, #cdd6f4);
+  --sidebar-primary: light-dark(#8839ef, #cba6f7);
+  --sidebar-primary-foreground: light-dark(#eff1f5, #11111b);
+  --sidebar-accent: light-dark(#dce0e8, #313244);
+  --sidebar-accent-foreground: light-dark(#4c4f69, #cdd6f4);
+  --sidebar-border: light-dark(#ccd0da, #313244);
+  --sidebar-ring: light-dark(#8839ef, #cba6f7);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 @theme inline {
