@@ -22,14 +22,22 @@ export async function POST(request: Request) {
     Effect.gen(function* () {
       const sessions = yield* AnonymousSessions;
       const chat = yield* GroundedChat;
+      const answer = yield* chat.stream(decoded.value);
       yield* sessions.admitChat(bearerToken(request));
-      return new Response(toSseBody(chat.stream(decoded.value)), {
+      return new Response(toSseBody(answer), {
         headers: {
           "content-type": "text/event-stream; charset=utf-8",
           "cache-control": "no-store",
           "x-accel-buffering": "no",
         },
       });
-    }).pipe(Effect.catch((error) => Effect.succeed(refusal(error)))),
+    }).pipe(
+      Effect.catchTag("UnknownModel", () =>
+        Effect.succeed(
+          Response.json({ message: "Unknown model" }, { status: 400 }),
+        ),
+      ),
+      Effect.catch((error) => Effect.succeed(refusal(error))),
+    ),
   );
 }

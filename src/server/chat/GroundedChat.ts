@@ -1,4 +1,5 @@
 import {
+  Array as Arr,
   Context,
   type Duration,
   Effect,
@@ -12,7 +13,7 @@ import { LanguageModel, Model, type Response } from "effect/ai";
 import { CircuitBreaker } from "@/server/provider/CircuitBreaker";
 import { notCovered } from "@/server/provider/ExtractiveAnswer";
 import { Retriever } from "@/server/search/Retriever";
-import type { ChatEvent, ChatRequest } from "./ChatProtocol";
+import type { ChatEvent, ChatModelInfo, ChatRequest } from "./ChatProtocol";
 import { groundedPrompt } from "./GroundedPrompt";
 
 export const passagesPerAnswer = 6;
@@ -20,12 +21,25 @@ export const passagesPerAnswer = 6;
 export const providerFailed =
   "Every model provider failed to answer. Try again in a moment.";
 
-export type ChatPlan = ExecutionPlan.ExecutionPlan<{
-  provides: LanguageModel.LanguageModel | Model.ModelName | Model.ProviderName;
-  input: unknown;
-  error: never;
-  requirements: never;
-}>;
+export interface ChatProvider extends ChatModelInfo {
+  readonly model: Layer.Layer<
+    LanguageModel.LanguageModel | Model.ModelName | Model.ProviderName
+  >;
+}
+
+export class UnknownModel extends Schema.TaggedError<UnknownModel>()(
+  "UnknownModel",
+  {},
+) {}
+
+const planOf = (providers: Arr.NonEmptyReadonlyArray<ChatProvider>) =>
+  ExecutionPlan.merge(
+    ...Arr.map(providers, ({ model }) =>
+      ExecutionPlan.make({ provide: model }),
+    ),
+  );
+
+type ChatPlan = ReturnType<typeof planOf>;
 
 export class FirstTokenTimeout extends Schema.TaggedError<FirstTokenTimeout>()(
   "FirstTokenTimeout",
@@ -56,10 +70,15 @@ const event = (value: ChatEvent) => Stream.succeed(value);
 
 export class GroundedChat extends Context.Service<
   GroundedChat,
-  { stream(request: ChatRequest): Stream.Stream<ChatEvent> }
+  {
+    readonly models: ReadonlyArray<ChatModelInfo>;
+    stream(
+      request: ChatRequest,
+    ): Effect.Effect<Stream.Stream<ChatEvent>, UnknownModel>;
+  }
 >()("rag-ai-chat/chat/GroundedChat") {
   static readonly layer = (
-    plan: ChatPlan,
+    providers: Arr.NonEmptyReadonlyArray<ChatProvider>,
     firstTokenDeadline: Duration.Input,
   ) =>
     Layer.effect(
@@ -67,10 +86,26 @@ export class GroundedChat extends Context.Service<
       Effect.gen(function* () {
         const retriever = yield* Retriever;
         const breaker = yield* CircuitBreaker;
-        const lastResort = plan.steps.length - 1;
+        const defaultPlan = planOf(providers);
 
-        const answer = (prompt: ReturnType<typeof groundedPrompt>) =>
-          Stream.unwrap(
+        const planFor = Effect.fn("GroundedChat.planFor")(function* (
+          model: string | undefined,
+        ) {
+          if (model === undefined) return defaultPlan;
+          const chosen = providers.find((provider) => provider.id === model);
+          if (chosen === undefined) return yield* new UnknownModel();
+          return planOf([
+            chosen,
+            ...providers.filter((provider) => provider !== chosen),
+          ]);
+        });
+
+        const answer = (
+          prompt: ReturnType<typeof groundedPrompt>,
+          plan: ChatPlan,
+        ) => {
+          const lastResort = plan.steps.length - 1;
+          return Stream.unwrap(
             Effect.gen(function* () {
               const model = yield* Model.ModelName;
               const { stepIndex } = yield* ExecutionPlan.CurrentMetadata;
@@ -90,9 +125,11 @@ export class GroundedChat extends Context.Service<
               preventFallbackOnPartialStream: true,
             }),
           );
+        };
 
         const respond = Effect.fn("GroundedChat.stream")(function* (
           request: ChatRequest,
+          plan: ChatPlan,
         ) {
           const question =
             request.messages.findLast((message) => message.role === "user")
@@ -112,6 +149,7 @@ export class GroundedChat extends Context.Service<
           const answeredBy = yield* Ref.make<string | null>(null);
           const deltas = answer(
             groundedPrompt(request.messages, passages),
+            plan,
           ).pipe(
             Stream.tap(({ model }) => Ref.set(answeredBy, model)),
             Stream.map(({ text }): ChatEvent => ({ _tag: "Delta", text })),
@@ -133,7 +171,11 @@ export class GroundedChat extends Context.Service<
         });
 
         return GroundedChat.of({
-          stream: (request) => Stream.unwrap(respond(request)),
+          models: providers.map(({ id, provider }) => ({ id, provider })),
+          stream: (request) =>
+            Effect.map(planFor(request.model), (plan) =>
+              Stream.unwrap(respond(request, plan)),
+            ),
         });
       }),
     );

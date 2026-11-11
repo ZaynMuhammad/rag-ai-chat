@@ -1,8 +1,8 @@
 import { assert, describe, it } from "@effect/vitest";
 import {
+  type Array as Arr,
   Duration,
   Effect,
-  ExecutionPlan,
   Fiber,
   Layer,
   Ref,
@@ -23,7 +23,12 @@ import { MockProvider } from "@/server/provider/MockProvider";
 import { notCovered } from "@/server/provider/ExtractiveAnswer";
 import { Retriever } from "@/server/search/Retriever";
 import type { ChatEvent, ChatRequest } from "./ChatProtocol";
-import { type ChatPlan, GroundedChat, providerFailed } from "./GroundedChat";
+import {
+  type ChatProvider,
+  GroundedChat,
+  providerFailed,
+  UnknownModel,
+} from "./GroundedChat";
 
 const fixture = corpusFixture([
   {
@@ -60,40 +65,15 @@ const outage = AiError.make({
   }),
 });
 
-const partialThenOutage = Model.make(
-  "test",
-  "partial-then-outage",
-  Layer.effect(
-    LanguageModel.LanguageModel,
-    LanguageModel.make({
-      generateText: () => Effect.fail(outage),
-      streamText: () =>
-        Stream.make(
-          { type: "text-start" as const, id: "t" },
-          { type: "text-delta" as const, id: "t", delta: "Partial " },
-        ).pipe(Stream.concat(Stream.fail(outage))),
-    }),
-  ),
-);
-
-const extractive = MockProvider.extractive({ tokenDelay: Duration.zero });
-
-const deadline = Duration.seconds(2);
-
-const chatWith = (plan: ChatPlan) =>
-  GroundedChat.layer(plan, deadline).pipe(
-    Layer.provide(CircuitBreaker.layer),
-    Layer.provide(Retriever.layer),
-    Layer.provide(fixture),
-  );
-
 const testModel = (
-  name: string,
+  id: string,
   streamText: () => Stream.Stream<Response.StreamPartEncoded, AiError.AiError>,
-) =>
-  Model.make(
+): ChatProvider => ({
+  id,
+  provider: "test",
+  model: Model.make(
     "test",
-    name,
+    id,
     Layer.effect(
       LanguageModel.LanguageModel,
       LanguageModel.make({
@@ -101,7 +81,8 @@ const testModel = (
         streamText,
       }),
     ),
-  );
+  ),
+});
 
 const textStart = { type: "text-start" as const, id: "t" };
 const delta = (text: string) => ({
@@ -110,10 +91,37 @@ const delta = (text: string) => ({
   delta: text,
 });
 
+const partialThenOutage = testModel("partial-then-outage", () =>
+  Stream.make(textStart, delta("Partial ")).pipe(
+    Stream.concat(Stream.fail(outage)),
+  ),
+);
+
+const extractive: ChatProvider = {
+  id: "mock-extractive",
+  provider: "mock",
+  model: MockProvider.extractive({ tokenDelay: Duration.zero }),
+};
+
+const failing: ChatProvider = {
+  id: "mock-failing",
+  provider: "mock",
+  model: MockProvider.failing,
+};
+
+const deadline = Duration.seconds(2);
+
+const chatWith = (...providers: Arr.NonEmptyReadonlyArray<ChatProvider>) =>
+  GroundedChat.layer(providers, deadline).pipe(
+    Layer.provide(CircuitBreaker.layer),
+    Layer.provide(Retriever.layer),
+    Layer.provide(fixture),
+  );
+
 const countedPrimary = Effect.gen(function* () {
   const calls = yield* Ref.make(0);
   const healthy = yield* Ref.make(false);
-  const model = testModel("primary", () =>
+  const provider = testModel("primary", () =>
     Stream.unwrap(
       Effect.gen(function* () {
         yield* Ref.update(calls, (n) => n + 1);
@@ -123,16 +131,25 @@ const countedPrimary = Effect.gen(function* () {
       }),
     ),
   );
-  return { calls, healthy, model };
+  return { calls, healthy, provider };
 });
 
 const askInBackground = (content: string) =>
   ask(content).pipe(Effect.forkChild({ startImmediately: true }));
 
-const ask = (content: string, scope: ChatRequest["scope"] = {}) =>
+const ask = (
+  content: string,
+  scope: ChatRequest["scope"] = {},
+  model?: string,
+) =>
   Effect.flatMap(GroundedChat, (chat) =>
-    Stream.runCollect(
-      chat.stream({ messages: [{ role: "user", content }], scope }),
+    Effect.flatMap(
+      chat.stream({
+        messages: [{ role: "user", content }],
+        scope,
+        ...(model === undefined ? {} : { model }),
+      }),
+      Stream.runCollect,
     ),
   );
 
@@ -164,9 +181,7 @@ describe("GroundedChat.stream", () => {
           _tag: "Done",
           model: "mock-extractive",
         });
-      }).pipe(
-        Effect.provide(chatWith(ExecutionPlan.make({ provide: extractive }))),
-      ),
+      }).pipe(Effect.provide(chatWith(extractive))),
   );
 
   it.effect(
@@ -179,16 +194,7 @@ describe("GroundedChat.stream", () => {
           _tag: "Done",
           model: "mock-extractive",
         });
-      }).pipe(
-        Effect.provide(
-          chatWith(
-            ExecutionPlan.make(
-              { provide: MockProvider.failing },
-              { provide: extractive },
-            ),
-          ),
-        ),
-      ),
+      }).pipe(Effect.provide(chatWith(failing, extractive))),
   );
 
   it.effect(
@@ -207,16 +213,7 @@ describe("GroundedChat.stream", () => {
           _tag: "Done",
           model: "partial-then-outage",
         });
-      }).pipe(
-        Effect.provide(
-          chatWith(
-            ExecutionPlan.make(
-              { provide: partialThenOutage },
-              { provide: extractive },
-            ),
-          ),
-        ),
-      ),
+      }).pipe(Effect.provide(chatWith(partialThenOutage, extractive))),
   );
 
   it.effect(
@@ -229,11 +226,7 @@ describe("GroundedChat.stream", () => {
           { _tag: "Delta", text: notCovered },
           { _tag: "Done", model: null },
         ]);
-      }).pipe(
-        Effect.provide(
-          chatWith(ExecutionPlan.make({ provide: MockProvider.failing })),
-        ),
-      ),
+      }).pipe(Effect.provide(chatWith(failing))),
   );
 
   it.effect(
@@ -250,11 +243,7 @@ describe("GroundedChat.stream", () => {
         const afterCitations = JSON.stringify(events.slice(1));
         assert.notInclude(afterCitations, question);
         assert.notInclude(afterCitations, "simulated outage");
-      }).pipe(
-        Effect.provide(
-          chatWith(ExecutionPlan.make({ provide: MockProvider.failing })),
-        ),
-      ),
+      }).pipe(Effect.provide(chatWith(failing))),
   );
 
   it.effect(
@@ -273,10 +262,8 @@ describe("GroundedChat.stream", () => {
       }).pipe(
         Effect.provide(
           chatWith(
-            ExecutionPlan.make(
-              { provide: testModel("hangs", () => Stream.never) },
-              { provide: extractive },
-            ),
+            testModel("hangs", () => Stream.never),
+            extractive,
           ),
         ),
       ),
@@ -292,20 +279,16 @@ describe("GroundedChat.stream", () => {
     }).pipe(
       Effect.provide(
         chatWith(
-          ExecutionPlan.make(
-            {
-              provide: testModel("slow", () =>
-                Stream.make(textStart, delta("Slow ")).pipe(
-                  Stream.concat(
-                    Stream.fromEffect(
-                      Effect.as(Effect.sleep("5 seconds"), delta("but sure.")),
-                    ),
-                  ),
+          testModel("slow", () =>
+            Stream.make(textStart, delta("Slow ")).pipe(
+              Stream.concat(
+                Stream.fromEffect(
+                  Effect.as(Effect.sleep("5 seconds"), delta("but sure.")),
                 ),
               ),
-            },
-            { provide: extractive },
+            ),
           ),
+          extractive,
         ),
       ),
     ),
@@ -320,13 +303,11 @@ describe("GroundedChat.stream", () => {
     }).pipe(
       Effect.provide(
         chatWith(
-          ExecutionPlan.make({
-            provide: testModel("last-resort", () =>
-              Stream.fromEffect(
-                Effect.as(Effect.sleep("5 seconds"), delta("Late.")),
-              ),
+          testModel("last-resort", () =>
+            Stream.fromEffect(
+              Effect.as(Effect.sleep("5 seconds"), delta("Late.")),
             ),
-          }),
+          ),
         ),
       ),
     ),
@@ -360,16 +341,54 @@ describe("GroundedChat.stream", () => {
           });
           const afterProbe = yield* ask("Who created Tetris?");
           assert.strictEqual(answerText(afterProbe), "The primary is back.");
-        }).pipe(
-          Effect.provide(
-            chatWith(
-              ExecutionPlan.make(
-                { provide: primary.model },
-                { provide: extractive },
-              ),
-            ),
-          ),
-        );
+        }).pipe(Effect.provide(chatWith(primary.provider, extractive)));
       }),
+  );
+
+  it.effect(
+    "puts the chosen model first and keeps the rest in order as fallback",
+    () =>
+      Effect.gen(function* () {
+        const chosen = yield* ask("Who created Tetris?", {}, "mock-extractive");
+        assert.deepStrictEqual(chosen.at(-1), {
+          _tag: "Done",
+          model: "mock-extractive",
+        });
+        const fellBack = yield* ask("Who created Tetris?", {}, "mock-failing");
+        assert.deepStrictEqual(fellBack.at(-1), {
+          _tag: "Done",
+          model: "default",
+        });
+      }).pipe(
+        Effect.provide(
+          chatWith(
+            testModel("default", () =>
+              Stream.make(textStart, delta("From the default.")),
+            ),
+            failing,
+            extractive,
+          ),
+        ),
+      ),
+  );
+
+  it.effect(
+    "lists the configured models and rejects one that is not configured",
+    () =>
+      Effect.gen(function* () {
+        const chat = yield* GroundedChat;
+        assert.deepStrictEqual(chat.models, [
+          { id: "mock-failing", provider: "mock" },
+          { id: "mock-extractive", provider: "mock" },
+        ]);
+        const rejected = yield* Effect.flip(
+          chat.stream({
+            messages: [{ role: "user", content: "Who created Tetris?" }],
+            scope: {},
+            model: "gpt-9",
+          }),
+        );
+        assert.instanceOf(rejected, UnknownModel);
+      }).pipe(Effect.provide(chatWith(failing, extractive))),
   );
 });

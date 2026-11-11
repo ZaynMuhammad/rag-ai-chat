@@ -8,12 +8,30 @@ export const ChatMessage = Schema.Struct({
 });
 export type ChatMessage = typeof ChatMessage.Type;
 
+export const ModelId = Schema.String.check(
+  Schema.isMinLength(1),
+  Schema.isMaxLength(100),
+);
+
+export const ChatModelInfo = Schema.Struct({
+  id: ModelId,
+  provider: Schema.String,
+});
+export type ChatModelInfo = typeof ChatModelInfo.Type;
+
+export const ChatModelList = Schema.Struct({
+  models: Schema.Array(ChatModelInfo),
+  default: ModelId,
+});
+export type ChatModelList = typeof ChatModelList.Type;
+
 export const ChatRequest = Schema.Struct({
   messages: Schema.Array(ChatMessage).check(
     Schema.isMinLength(1),
     Schema.isMaxLength(20),
   ),
   scope: Scope,
+  model: Schema.optional(ModelId),
 });
 export type ChatRequest = typeof ChatRequest.Type;
 

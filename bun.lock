@@ -7,6 +7,7 @@
       "dependencies": {
         "@base-ui/react": "1.9.0",
         "@effect/ai-anthropic": "4.1.2",
+        "@effect/ai-openai-compat": "4.1.2",
         "@effect/platform-bun": "4.1.2",
         "@effect/sql-sqlite-bun": "4.1.2",
         "@effect/sql-sqlite-node": "4.1.2",
@@ -120,6 +121,8 @@
     "@dotenvx/primitives": ["@dotenvx/primitives@0.8.0", "", {}, "sha512-VYJy0uhFm9zTJ1TxBaW/pA8bjbOM/OttaNMwZ1RHG4JKyRG7DhSdiqD1ipQoAyoD22olUtxbP78W9xY3Wd11bg=="],
 
     "@effect/ai-anthropic": ["@effect/ai-anthropic@4.1.2", "", { "peerDependencies": { "effect": "^4.1.2" } }, "sha512-HeFop5b4QY5YKKWXmdM1FJdqIqk91wueqt6hcGGTd9bASpQX2Pw2tjIzCsu+HxZgOKVW2EDQ9G1MpVOC+Tvs8g=="],
+
+    "@effect/ai-openai-compat": ["@effect/ai-openai-compat@4.1.2", "", { "peerDependencies": { "effect": "^4.1.2" } }, "sha512-6NRpW6GTLoCIuGcs0mCX3cBSZZKJRX1Fo0oDA6NwUKraaAoYJM1gw8/P2vRfi0+G9xXS7EqO2Asgf7ecJb5/AQ=="],
 
     "@effect/language-service": ["@effect/language-service@0.87.5", "", { "bin": { "effect-language-service": "cli.js" } }, "sha512-np/zJgk71/PyHxtoqyUKLYcpQhoRBI+L6+1Z0ILk35JSQ/lvXzwlwOwddYZLDkeC4bdF2ukKekqKlla/F88R5w=="],
 

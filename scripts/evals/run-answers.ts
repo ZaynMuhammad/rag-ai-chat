@@ -3,7 +3,6 @@ import {
   Config,
   Duration,
   Effect,
-  ExecutionPlan,
   FileSystem,
   Layer,
   Option,
@@ -32,7 +31,7 @@ import {
 import { mean } from "../../src/evals/RetrievalMetrics";
 import type { ChatEvent } from "../../src/server/chat/ChatProtocol";
 import {
-  type ChatPlan,
+  type ChatProvider,
   GroundedChat,
   passagesPerAnswer,
 } from "../../src/server/chat/GroundedChat";
@@ -274,12 +273,14 @@ const program = Effect.gen(function* () {
     (p) => p.gameQid,
   );
 
-  const plan: ChatPlan =
+  const answerer: ChatProvider =
     provider === "mock"
-      ? ExecutionPlan.make({
-          provide: MockProvider.extractive({ tokenDelay: Duration.zero }),
-        })
-      : ExecutionPlan.make({ provide: anthropic(model), attempts: 2 });
+      ? {
+          id: "mock-extractive",
+          provider: "mock",
+          model: MockProvider.extractive({ tokenDelay: Duration.zero }),
+        }
+      : { id: model, provider: "anthropic", model: anthropic(model) };
   const judgeModel = anthropic(model, { max_tokens: judgeMaxTokens });
 
   const answerOne = (question: EvalQuestion) =>
@@ -287,7 +288,7 @@ const program = Effect.gen(function* () {
       const chat = yield* GroundedChat;
       const collected = collect(
         yield* Stream.runCollect(
-          chat.stream({
+          yield* chat.stream({
             messages: [{ role: "user", content: question.question }],
             scope: {},
           }),
@@ -320,7 +321,7 @@ const program = Effect.gen(function* () {
     concurrency: provider === "mock" ? 1 : 4,
   }).pipe(
     Effect.provide(
-      GroundedChat.layer(plan, yield* firstTokenDeadline).pipe(
+      GroundedChat.layer([answerer], yield* firstTokenDeadline).pipe(
         Layer.provide(CircuitBreaker.layer),
       ),
     ),
