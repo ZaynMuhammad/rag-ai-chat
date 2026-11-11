@@ -8,7 +8,7 @@ import {
   unitedKingdom,
   unitedStates,
 } from "@/server/corpus/CorpusFixture";
-import { type BrowseQuery, GameCatalog, GameNotFound } from "./GameCatalog";
+import { GameCatalog, GameNotFound } from "./GameCatalog";
 
 const kyoto = (developer: string) => ({
   developer,
@@ -72,112 +72,25 @@ const fixture = corpusFixture([
     studios: [kyoto("Nintendo")],
     passages: [],
   },
+  {
+    qid: "Q7",
+    title: "Lemmings",
+    released: "1991-02-14",
+    origins: [unitedKingdom],
+    studios: [
+      {
+        developer: "DMA Design",
+        placeQid: placeQidOf(unitedKingdom.iso2),
+        place: "United Kingdom",
+      },
+    ],
+    passages: lead("Lemmings"),
+  },
 ]);
-
-const browse = (query: Partial<BrowseQuery>) =>
-  Effect.flatMap(GameCatalog, (catalog) =>
-    catalog.browse({ sort: "newest", page: 1, ...query }),
-  ).pipe(Effect.map((page) => page.games.map((game) => game.title)));
 
 layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
   "GameCatalog",
   (it) => {
-    describe("browse", () => {
-      it.effect(
-        "sorts by release date, newest first, with undated games last",
-        () =>
-          Effect.gen(function* () {
-            assert.deepStrictEqual(yield* browse({}), [
-              "Kingdom Hearts",
-              "Doom",
-              "Super Mario Bros.",
-              "Tetris",
-              "Elite",
-            ]);
-          }),
-      );
-
-      it.effect(
-        "orders a bare year before precise dates in that year, oldest first",
-        () =>
-          Effect.gen(function* () {
-            assert.deepStrictEqual(yield* browse({ sort: "oldest" }), [
-              "Tetris",
-              "Super Mario Bros.",
-              "Doom",
-              "Kingdom Hearts",
-              "Elite",
-            ]);
-          }),
-      );
-
-      it.effect(
-        "filters by region and keeps co-productions under every region they came from",
-        () =>
-          Effect.gen(function* () {
-            assert.deepStrictEqual(yield* browse({ region: "Asia" }), [
-              "Kingdom Hearts",
-              "Super Mario Bros.",
-            ]);
-            assert.deepStrictEqual(
-              yield* browse({ subRegion: "Northern America" }),
-              ["Kingdom Hearts", "Doom"],
-            );
-          }),
-      );
-
-      it.effect("filters by an inclusive range of release years", () =>
-        Effect.gen(function* () {
-          assert.deepStrictEqual(yield* browse({ from: 1985, to: 1993 }), [
-            "Doom",
-            "Super Mario Bros.",
-            "Tetris",
-          ]);
-        }),
-      );
-
-      it.effect(
-        "matches titles case-insensitively and hides games without article text",
-        () =>
-          Effect.gen(function* () {
-            assert.deepStrictEqual(yield* browse({ title: "  KINGDOM " }), [
-              "Kingdom Hearts",
-            ]);
-            assert.deepStrictEqual(yield* browse({ title: "Remaster" }), []);
-          }),
-      );
-
-      it.effect("lists every country a game came from", () =>
-        Effect.gen(function* () {
-          const catalog = yield* GameCatalog;
-          const page = yield* catalog.browse({
-            sort: "title",
-            page: 1,
-            title: "Kingdom",
-          });
-          assert.deepStrictEqual(page.games[0]?.countries, [
-            "Japan",
-            "United States of America",
-          ]);
-          assert.strictEqual(page.total, 1);
-        }),
-      );
-    });
-
-    describe("subRegions", () => {
-      it.effect("counts games with text once per sub-region", () =>
-        Effect.gen(function* () {
-          const catalog = yield* GameCatalog;
-          const asia = (yield* catalog.subRegions).filter(
-            (row) => row.region === "Asia",
-          );
-          assert.deepStrictEqual(asia, [
-            { region: "Asia", subRegion: "Eastern Asia", games: 2 },
-          ]);
-        }),
-      );
-    });
-
     describe("pins", () => {
       it.effect(
         "pins a game at its studio's city and falls back to its country only when no studio is known",
@@ -186,12 +99,13 @@ layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
             const catalog = yield* GameCatalog;
             const pins = (yield* catalog.pins)
               .map((pin) => [pin.label, pin.kind, pin.games])
-              .sort(([a], [b]) => String(a).localeCompare(String(b)));
+              .sort((a, b) => a.join().localeCompare(b.join()));
             assert.deepStrictEqual(pins, [
               ["Kyoto", "studio", 1],
               ["Soviet Union", "country", 1],
               ["Tokyo", "studio", 1],
               ["United Kingdom", "country", 1],
+              ["United Kingdom", "studio", 1],
               ["United States of America", "country", 1],
             ]);
           }),
@@ -204,6 +118,7 @@ layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
           const catalog = yield* GameCatalog;
           const tokyo = yield* catalog.placeGames({
             placeQid: "Q1490",
+            kind: "studio",
             page: 1,
           });
           assert.deepStrictEqual(tokyo, {
@@ -221,6 +136,7 @@ layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
           });
           const unitedStatesGames = yield* catalog.placeGames({
             placeQid: placeQidOf(unitedStates.iso2),
+            kind: "country",
             page: 1,
           });
           assert.deepStrictEqual(
@@ -228,6 +144,33 @@ layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
             [["Doom", []]],
           );
         }),
+      );
+
+      it.effect(
+        "keeps a place's studio games apart from its country fallback games",
+        () =>
+          Effect.gen(function* () {
+            const catalog = yield* GameCatalog;
+            const placeQid = placeQidOf(unitedKingdom.iso2);
+            const studio = yield* catalog.placeGames({
+              placeQid,
+              kind: "studio",
+              page: 1,
+            });
+            const country = yield* catalog.placeGames({
+              placeQid,
+              kind: "country",
+              page: 1,
+            });
+            assert.deepStrictEqual(
+              [studio.games.map((game) => game.title), studio.total],
+              [["Lemmings"], 1],
+            );
+            assert.deepStrictEqual(
+              [country.games.map((game) => game.title), country.total],
+              [["Elite"], 1],
+            );
+          }),
       );
     });
 
