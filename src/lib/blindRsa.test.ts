@@ -168,9 +168,14 @@ describe("blind signatures", () => {
   it.effect("finalize rejects a blind signature from another key", () =>
     Effect.promise(async () => {
       const publicKey = await importPublicKey(freshKey().spki);
+      const otherKey = freshKey();
       const message = randomMessage();
-      const { blindedMessage, inverse } = await blind(publicKey, message);
-      const forged = blindSign(freshKey().privateKey, blindedMessage);
+      const { inverse } = await blind(publicKey, message);
+      const { blindedMessage } = await blind(
+        await importPublicKey(otherKey.spki),
+        message,
+      );
+      const forged = blindSign(otherKey.privateKey, blindedMessage);
       const failure = await finalize(publicKey, message, forged, inverse).then(
         () => undefined,
         (error: unknown) => error,
