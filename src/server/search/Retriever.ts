@@ -22,14 +22,16 @@ const stopWords = new Set(
 
 const maxTerms = 24;
 
-export const searchTerms = (query: string) =>
-  [
-    ...new Set(
-      words(query).filter(
-        (term) => !stopWords.has(term) && (term.length > 1 || /\d/.test(term)),
-      ),
+export const contentTerms = (text: string) => [
+  ...new Set(
+    words(text).filter(
+      (term) => !stopWords.has(term) && (term.length > 1 || /\d/.test(term)),
     ),
-  ].slice(0, maxTerms);
+  ),
+];
+
+export const searchTerms = (query: string) =>
+  contentTerms(query).slice(0, maxTerms);
 
 const anyOf = (terms: ReadonlyArray<string>) =>
   terms.map((term) => `"${term}"`).join(" OR ");

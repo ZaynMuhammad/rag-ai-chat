@@ -3,6 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  headers: () =>
+    Promise.resolve([
+      {
+        source: "/search",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
+    ]),
   turbopack: {
     rules: {
       "*.css": {

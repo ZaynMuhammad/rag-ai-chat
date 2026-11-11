@@ -24,6 +24,9 @@
   --border: #e6e1da;
   --input: #e6e1da;
   --ring: #c2410c;
+  --globe-ocean: #e9eef3;
+  --globe-land: #d6d0c6;
+  --globe-graticule: #d5dde5;
   --sidebar: #f5f2ee;
   --sidebar-foreground: #1d1b19;
   --sidebar-primary: #c2410c;
@@ -54,6 +57,9 @@
     --border: #34312d;
     --input: #3d3a35;
     --ring: #fb923c;
+    --globe-ocean: #1a2129;
+    --globe-land: #3a3631;
+    --globe-graticule: #232c36;
     --sidebar: #181715;
     --sidebar-foreground: #f1ede7;
     --sidebar-primary: #fb923c;
