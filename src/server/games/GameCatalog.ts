@@ -11,30 +11,7 @@ import {
   type PlaceGamesPage,
   Studio,
 } from "./GameProtocol";
-import { Qid, Scope, scopeConditions } from "./Scope";
-
-export const SortOrder = Schema.Literals(["newest", "oldest", "title"]);
-export type SortOrder = typeof SortOrder.Type;
-
-export const BrowseQuery = Schema.Struct({
-  ...Scope.fields,
-  title: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(100))),
-  sort: SortOrder,
-  page: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 10_000 })),
-});
-export type BrowseQuery = typeof BrowseQuery.Type;
-
-const StringList = Schema.fromJsonString(Schema.Array(Schema.String));
-
-export const GameSummary = Schema.Struct({
-  qid: Schema.String,
-  title: Schema.String,
-  released: Schema.NullOr(Schema.String),
-  description: Schema.NullOr(Schema.String),
-  countries: StringList,
-  subRegions: StringList,
-});
-export type GameSummary = typeof GameSummary.Type;
+import { Qid } from "./Scope";
 
 export const SubRegionCount = Schema.Struct({
   region: Schema.String,
@@ -43,16 +20,9 @@ export const SubRegionCount = Schema.Struct({
 });
 export type SubRegionCount = typeof SubRegionCount.Type;
 
-export interface BrowsePage {
-  readonly games: ReadonlyArray<GameSummary>;
-  readonly total: number;
-  readonly page: number;
-  readonly pageCount: number;
-}
-
 const PlaceGameRow = Schema.Struct({
   ...PlaceGame.fields,
-  genres: StringList,
+  genres: Schema.fromJsonString(Schema.Array(Schema.String)),
 });
 
 export class GameNotFound extends Schema.TaggedError<GameNotFound>()(
@@ -60,7 +30,6 @@ export class GameNotFound extends Schema.TaggedError<GameNotFound>()(
   { qid: Schema.String },
 ) {}
 
-export const pageSize = 24;
 export const placePageSize = 50;
 
 const isQid = Schema.is(Qid);
@@ -68,7 +37,6 @@ const isQid = Schema.is(Qid);
 export class GameCatalog extends Context.Service<
   GameCatalog,
   {
-    browse(query: BrowseQuery): Effect.Effect<BrowsePage>;
     readonly subRegions: Effect.Effect<ReadonlyArray<SubRegionCount>>;
     readonly pins: Effect.Effect<ReadonlyArray<Pin>>;
     placeGames(query: PlaceGamesQuery): Effect.Effect<PlaceGamesPage>;
@@ -80,65 +48,7 @@ export class GameCatalog extends Context.Service<
     Effect.gen(function* () {
       const sql = yield* SqlClient.SqlClient;
 
-      const hasText = sql`EXISTS (SELECT 1 FROM passages WHERE passages.game_qid = games.qid)`;
-
       const pinHasText = sql`pins.game_qid IN (SELECT game_qid FROM passages)`;
-
-      const browseConditions = (query: BrowseQuery) =>
-        sql.and([
-          hasText,
-          ...scopeConditions(sql, query),
-          ...(query.title === undefined || query.title.trim() === ""
-            ? []
-            : [
-                sql`instr(lower(games.title), lower(${query.title.trim()})) > 0`,
-              ]),
-        ]);
-
-      const orderBy = (sort: SortOrder) =>
-        sort === "title"
-          ? sql`games.title COLLATE NOCASE`
-          : sort === "oldest"
-            ? sql`games.released IS NULL, games.released, games.title COLLATE NOCASE`
-            : sql`games.released IS NULL, games.released DESC, games.title COLLATE NOCASE`;
-
-      const findGames = SqlSchema.findAll({
-        Request: BrowseQuery,
-        Result: GameSummary,
-        execute: (query) => sql`
-          SELECT
-            games.qid, games.title, games.released, games.description,
-            (SELECT json_group_array(DISTINCT country) FROM origins WHERE game_qid = games.qid) AS countries,
-            (SELECT json_group_array(DISTINCT sub_region) FROM origins WHERE game_qid = games.qid) AS subRegions
-          FROM games
-          WHERE ${browseConditions(query)}
-          ORDER BY ${orderBy(query.sort)}
-          LIMIT ${pageSize} OFFSET ${(query.page - 1) * pageSize}
-        `,
-      });
-
-      const countGames = SqlSchema.findOne({
-        Request: BrowseQuery,
-        Result: Schema.Struct({ total: Schema.Number }),
-        execute: (query) => sql`
-          SELECT COUNT(*) AS total FROM games WHERE ${browseConditions(query)}
-        `,
-      });
-
-      const browse = Effect.fn("GameCatalog.browse")(function* (
-        query: BrowseQuery,
-      ) {
-        const [games, { total }] = yield* Effect.all([
-          findGames(query),
-          countGames(query),
-        ]);
-        return {
-          games,
-          total,
-          page: query.page,
-          pageCount: Math.max(1, Math.ceil(total / pageSize)),
-        };
-      }, Effect.orDie);
 
       const subRegions = yield* SqlSchema.findAll({
         Request: Schema.Void,
@@ -146,7 +56,7 @@ export class GameCatalog extends Context.Service<
         execute: () => sql`
           SELECT origins.region, origins.sub_region AS subRegion, COUNT(DISTINCT games.qid) AS games
           FROM origins JOIN games ON games.qid = origins.game_qid
-          WHERE ${hasText}
+          WHERE EXISTS (SELECT 1 FROM passages WHERE passages.game_qid = games.qid)
           GROUP BY origins.region, origins.sub_region
           ORDER BY origins.region, games DESC
         `,
@@ -187,7 +97,7 @@ export class GameCatalog extends Context.Service<
           WHERE games.qid IN (
             SELECT game_qid FROM pins WHERE place_qid = ${query.placeQid} AND ${pinHasText}
           )
-          ORDER BY ${orderBy("newest")}
+          ORDER BY games.released IS NULL, games.released DESC, games.title COLLATE NOCASE
           LIMIT ${placePageSize} OFFSET ${(query.page - 1) * placePageSize}
         `,
       });
@@ -279,7 +189,7 @@ export class GameCatalog extends Context.Service<
         };
       });
 
-      return GameCatalog.of({ browse, subRegions, pins, placeGames, game });
+      return GameCatalog.of({ subRegions, pins, placeGames, game });
     }),
   );
 }
