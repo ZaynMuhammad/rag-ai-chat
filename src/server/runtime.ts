@@ -18,6 +18,7 @@ import {
 } from "@/server/provider/ChatModels";
 import { CircuitBreaker } from "@/server/provider/CircuitBreaker";
 import { Retriever } from "@/server/search/Retriever";
+import { SearchResults } from "@/server/search/SearchResults";
 
 const Chat = Layer.unwrap(
   Effect.gen(function* () {
@@ -34,6 +35,7 @@ const AppLayer = Layer.mergeAll(
   GameCatalog.layer,
   Chat,
   ProCredentials.layer,
+  SearchResults.layer,
 ).pipe(
   Layer.provideMerge(AnonymousSessions.layer),
   Layer.provideMerge(observedRetrieval.pipe(Layer.provide(Retriever.layer))),
