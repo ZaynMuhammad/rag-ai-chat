@@ -73,6 +73,39 @@ question + scope (region, years, or one game)
 - **Bounded abuse.** Each token gets 10 chats a minute. Global caps on chats and on new tokens bound abuse without knowing who anyone is.
 - **Clean errors.** Provider errors never echo the question back to the client. A test checks this.
 
+## Pro without identity
+
+Paying for Pro should not make you identifiable. Pro access uses RSA blind signatures ([RFC 9474](https://www.rfc-editor.org/rfc/rfc9474), variant RSABSSA-SHA384-PSS-Deterministic), the same idea as Privacy Pass.
+
+1. **Get credentials.** On [`/pro`](src/app/pro/page.tsx) you paste an access code. Your browser makes 10 random 32-byte messages and blinds each one by multiplying in a random factor only it knows. It sends the code and the blinded messages. The server checks the code, signs the blinded messages, and returns the signatures. It never sees the real messages.
+2. **Unblind.** The browser removes its factors, which leaves ordinary RSA-PSS signatures on the real messages. It checks each one against the published key and keeps them in `localStorage`.
+3. **Spend one per session.** When the chat needs a new session, the browser sends one message and its signature to `POST /api/session`. The server checks the signature, records a hash of the message so it can't be used twice, and returns a session token marked `pro`: 60 chats a minute instead of 10, under its own global cap.
+
+The server sees a code and some blinded numbers at step 1, and a message and a signature at step 3. Every blinded number it ever signed matches every credential it is shown equally well, so it can't tell whose credential it is. A test checks exactly this.
+
+```text
+Browser                                   Server
+   │  GET /api/pro/keys                      │
+   │◄──────────────── key id, public key ─────│  key id = SHA-256(SPKI)
+   │  m₁…m₁₀ random; bᵢ = blind(mᵢ, rᵢ)       │
+   │  POST /api/pro/credentials              │
+   │  { code, key id, b₁…b₁₀ } ──────────────►│  check code, quota per code
+   │◄──────────────────────── s'₁…s'₁₀ ───────│  s'ᵢ = bᵢ^d mod n
+   │  sᵢ = finalize(s'ᵢ, rᵢ); verify          │
+   │                                          │
+   │        … later, any number of sessions … │
+   │  POST /api/session { key id, mᵢ, sᵢ } ──►│  verify; SHA-256(mᵢ) not spent → record it
+   │◄──────────────── token (tier: pro) ──────│
+```
+
+| Variable                  | Default               | Effect                                                                                    |
+| ------------------------- | --------------------- | ----------------------------------------------------------------------------------------- |
+| `PRO_ACCESS_CODES`        | unset (no Pro access) | Comma-separated dev access codes. Stands in for a billing check.                          |
+| `PRO_SIGNING_KEY`         | random 2048-bit key   | PEM RSA private keys, newest first. The first one signs; all of them verify.              |
+| `PRO_SIGNING_KEY_EXPIRES` | 7 days from start     | One ISO date per key, comma-separated. Credentials stop verifying after their key's date. |
+
+`bun run bench:pro` times each step.
+
 ## Run it
 
 Requires Bun 1.3 and Node 24.
