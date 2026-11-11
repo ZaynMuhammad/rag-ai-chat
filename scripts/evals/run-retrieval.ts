@@ -17,7 +17,7 @@ import {
   type RetrieverOptions,
 } from "../../src/server/search/Retriever";
 import { CorpusDatabase } from "../corpus/CorpusDatabase";
-import { evalDirectory, loadEvalSets } from "./EvalSet";
+import { evalDirectory, groupsOf, loadEvalSets } from "./EvalSet";
 
 const depth = 20;
 const variants: ReadonlyArray<{
@@ -84,20 +84,13 @@ const metrics = (scored: ReadonlyArray<Scored>) => ({
   ),
 });
 
-const breakdown = (scored: ReadonlyArray<Scored>) => {
-  const groups = new Map<string, Array<Scored>>([["all", [...scored]]]);
-  for (const entry of scored) {
-    for (const key of [
-      `source:${entry.question.source}`,
-      ...entry.question.tags.map((tag) => `tag:${tag}`),
-    ]) {
-      groups.set(key, [...(groups.get(key) ?? []), entry]);
-    }
-  }
-  return Object.fromEntries(
-    [...groups].map(([key, group]) => [key, metrics(group)]),
+const breakdown = (scored: ReadonlyArray<Scored>) =>
+  Object.fromEntries(
+    [...groupsOf(scored, (entry) => entry.question)].map(([key, group]) => [
+      key,
+      metrics(group),
+    ]),
   );
-};
 
 const program = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
