@@ -2,14 +2,24 @@
 
 import { geoDistance, geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import { MinusIcon, PlusIcon } from "lucide-react";
-import { type PointerEvent, type WheelEvent, useRef, useState } from "react";
+import {
+  type PointerEvent,
+  type WheelEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { feature } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import landTopology from "world-atlas/land-110m.json";
 import { Button } from "@/components/ui/button";
 import type { Pin } from "@/server/games/GameProtocol";
+import { paintPixelEarth, unitsPerCanvasPixel } from "./pixelEarth";
 
 type Rotation = readonly [number, number];
+
+const earthStyles = ["Realistic", "Pixel"] as const;
+type EarthStyle = (typeof earthStyles)[number];
 
 interface Drag {
   readonly x: number;
@@ -24,6 +34,9 @@ const minZoom = 1;
 const maxZoom = 16;
 const dragThreshold = 4;
 const startRotation: Rotation = [30, -30];
+const pixelViewsAcross = 3;
+const pixelCanvasSize = (size * pixelViewsAcross) / unitsPerCanvasPixel;
+const pixelCanvasSpan = `${pixelViewsAcross * 100}cqmin`;
 
 const topology = landTopology as unknown as Topology<{
   land: GeometryCollection;
@@ -58,9 +71,20 @@ export function Globe({
   const [rotation, setRotation] = useState(startRotation);
   const [zoom, setZoom] = useState(minZoom);
   const [hovered, setHovered] = useState<Pin | null>(null);
+  const [earthStyle, setEarthStyle] = useState<EarthStyle>("Realistic");
   const drag = useRef<Drag | null>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
 
+  const pixelated = earthStyle === "Pixel";
   const scale = radius * zoom;
+
+  useEffect(() => {
+    const context = canvas.current?.getContext("2d", {
+      willReadFrequently: true,
+    });
+    if (!pixelated || !context) return;
+    paintPixelEarth(context, land, rotation, scale / unitsPerCanvasPixel);
+  }, [pixelated, rotation, scale]);
   const projection = geoOrthographic()
     .scale(scale)
     .translate([size / 2, size / 2])
@@ -126,38 +150,52 @@ export function Globe({
   };
 
   return (
-    <div className="relative size-full">
+    <div className="relative size-full overflow-hidden [container-type:size]">
+      {pixelated && (
+        <canvas
+          ref={canvas}
+          width={pixelCanvasSize}
+          height={pixelCanvasSize}
+          aria-hidden
+          style={{ width: pixelCanvasSpan, height: pixelCanvasSpan }}
+          className="pointer-events-none absolute top-1/2 left-1/2 -translate-1/2 [image-rendering:pixelated]"
+        />
+      )}
       <svg
         viewBox={`0 0 ${size} ${size}`}
         role="img"
         aria-label="Globe of video game studios"
-        className="size-full cursor-grab touch-none select-none active:cursor-grabbing"
+        className="relative size-full cursor-grab touch-none select-none active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         onWheel={onWheel}
       >
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={scale}
-          fill="var(--globe-ocean)"
-        />
-        <path
-          d={path(graticule) ?? undefined}
-          fill="none"
-          stroke="var(--globe-graticule)"
-          strokeWidth={0.6}
-        />
-        <path d={path(land) ?? undefined} fill="var(--globe-land)" />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={scale}
-          fill="none"
-          stroke="var(--border)"
-        />
+        {!pixelated && (
+          <>
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={scale}
+              fill="var(--globe-ocean)"
+            />
+            <path
+              d={path(graticule) ?? undefined}
+              fill="none"
+              stroke="var(--globe-graticule)"
+              strokeWidth={0.6}
+            />
+            <path d={path(land) ?? undefined} fill="var(--globe-land)" />
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={scale}
+              fill="none"
+              stroke="var(--border)"
+            />
+          </>
+        )}
         {placed.map(({ pin, x, y }) => (
           <circle
             key={pinKey(pin)}
@@ -220,6 +258,25 @@ export function Globe({
         >
           <MinusIcon />
         </Button>
+      </div>
+      <div
+        role="group"
+        aria-label="Earth style"
+        className="absolute top-3 right-3 flex gap-0.5 rounded-lg border bg-background p-0.5"
+      >
+        {earthStyles.map((style) => (
+          <Button
+            key={style}
+            variant={style === earthStyle ? "secondary" : "ghost"}
+            size="xs"
+            aria-pressed={style === earthStyle}
+            onClick={() => {
+              setEarthStyle(style);
+            }}
+          >
+            {style}
+          </Button>
+        ))}
       </div>
     </div>
   );
