@@ -10,6 +10,7 @@ import {
 import { fetchGame, fetchPlaceGames } from "@/lib/atlas";
 import {
   type ChatGame,
+  deleteChat,
   findChat,
   saveChat,
   type StoredChat,
@@ -18,7 +19,7 @@ import {
 import type { Pin } from "@/server/games/GameProtocol";
 import { ChatSidebar } from "./ChatSidebar";
 import { GameDialog, type OpenGame } from "./GameDialog";
-import { Globe } from "./Globe";
+import { Globe, pinKey } from "./Globe";
 import { PlacePanel, type PlaceSelection } from "./PlacePanel";
 
 const titleLength = 60;
@@ -37,14 +38,14 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
   const [openGame, setOpenGame] = useState<OpenGame | null>(null);
 
   const selectPin = (pin: Pin) => {
-    setPlace({ pin, pages: [fetchPlaceGames(pin.placeQid, 1)] });
+    setPlace({ pin, pages: [fetchPlaceGames(pin, 1)] });
   };
 
   const showMorePlaceGames = (page: number) => {
     if (place === null) return;
     setPlace({
       ...place,
-      pages: [...place.pages, fetchPlaceGames(place.pin.placeQid, page)],
+      pages: [...place.pages, fetchPlaceGames(place.pin, page)],
     });
   };
 
@@ -71,6 +72,12 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
     setPlace(null);
   };
 
+  const deleteStoredChat = (chat: StoredChat) => {
+    deleteChat(chat.id);
+    if (chat.id === chatId) setChatId(crypto.randomUUID());
+    if (chat.id === openGame?.chatId) setOpenGame(null);
+  };
+
   const openCitedArticle: CiteHandler = (passage) => {
     openGameChat(
       { qid: passage.gameQid, title: passage.title },
@@ -86,14 +93,15 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
         activeChatId={openGame?.chatId ?? chatId}
         onNewChat={startNewChat}
         onOpenChat={openStoredChat}
+        onDeleteChat={deleteStoredChat}
       />
       <SidebarInset className="h-dvh overflow-hidden">
         <header className="flex items-center gap-2 border-b px-3 py-2">
           <SidebarTrigger />
-          <h1 className="text-sm font-medium">
+          <h1 className="min-w-0 truncate text-sm font-medium">
             Video games on Wikipedia, by where they were made
           </h1>
-          <p className="ml-auto hidden text-xs text-muted-foreground md:block">
+          <p className="ml-auto hidden shrink-0 text-xs text-muted-foreground md:block">
             Drag to spin · scroll to zoom · click a pin
           </p>
         </header>
@@ -117,15 +125,17 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
             "Who designed the first Metal Gear game?",
           ]}
           emptyState={
-            <>
-              <Globe
-                pins={pins}
-                selected={place?.pin ?? null}
-                onSelect={selectPin}
-              />
+            <div className="flex size-full flex-col md:flex-row">
+              <div className="min-h-0 min-w-0 flex-1">
+                <Globe
+                  pins={pins}
+                  selected={place?.pin ?? null}
+                  onSelect={selectPin}
+                />
+              </div>
               {place !== null && (
                 <PlacePanel
-                  key={place.pin.placeQid}
+                  key={pinKey(place.pin)}
                   selection={place}
                   onClose={() => {
                     setPlace(null);
@@ -136,7 +146,7 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
                   onMore={showMorePlaceGames}
                 />
               )}
-            </>
+            </div>
           }
         />
       </SidebarInset>

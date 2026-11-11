@@ -19,16 +19,18 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { deleteChat, type StoredChat, useChats } from "@/lib/chats";
+import { type StoredChat, useChats } from "@/lib/chats";
 
 export function ChatSidebar({
   activeChatId,
   onNewChat,
   onOpenChat,
+  onDeleteChat,
 }: {
   activeChatId: string;
   onNewChat: () => void;
   onOpenChat: (chat: StoredChat) => void;
+  onDeleteChat: (chat: StoredChat) => void;
 }) {
   const chats = useChats();
   return (
@@ -75,7 +77,7 @@ export function ChatSidebar({
                       showOnHover
                       aria-label={`Delete chat “${chat.title}”`}
                       onClick={() => {
-                        deleteChat(chat.id);
+                        onDeleteChat(chat);
                       }}
                     >
                       <TrashIcon />

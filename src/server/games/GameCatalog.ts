@@ -41,6 +41,8 @@ export class GameCatalog extends Context.Service<
       const sql = yield* SqlClient.SqlClient;
 
       const pinHasText = sql`pins.game_qid IN (SELECT game_qid FROM passages)`;
+      const pinIs = (query: PlaceGamesQuery) =>
+        sql`place_qid = ${query.placeQid} AND kind = ${query.kind} AND ${pinHasText}`;
 
       const pins = yield* SqlSchema.findAll({
         Request: Schema.Void,
@@ -71,7 +73,7 @@ export class GameCatalog extends Context.Service<
             )) AS genres
           FROM games
           WHERE games.qid IN (
-            SELECT game_qid FROM pins WHERE place_qid = ${query.placeQid} AND ${pinHasText}
+            SELECT game_qid FROM pins WHERE ${pinIs(query)}
           )
           ORDER BY games.released IS NULL, games.released DESC, games.title COLLATE NOCASE
           LIMIT ${placePageSize} OFFSET ${(query.page - 1) * placePageSize}
@@ -79,11 +81,10 @@ export class GameCatalog extends Context.Service<
       });
 
       const countPlaceGames = SqlSchema.findOne({
-        Request: Qid,
+        Request: PlaceGamesQuery,
         Result: Schema.Struct({ total: Schema.Number }),
-        execute: (placeQid) => sql`
-          SELECT COUNT(DISTINCT game_qid) AS total FROM pins
-          WHERE place_qid = ${placeQid} AND ${pinHasText}
+        execute: (query) => sql`
+          SELECT COUNT(DISTINCT game_qid) AS total FROM pins WHERE ${pinIs(query)}
         `,
       });
 
@@ -92,7 +93,7 @@ export class GameCatalog extends Context.Service<
       ) {
         const [games, { total }] = yield* Effect.all([
           findPlaceGames(query),
-          countPlaceGames(query.placeQid),
+          countPlaceGames(query),
         ]);
         return {
           games,

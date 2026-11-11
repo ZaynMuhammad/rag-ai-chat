@@ -73,7 +73,7 @@ const write = (chats: ReadonlyArray<StoredChat>) => {
 
 const subscribe = (listener: () => void) => {
   const onStorage = (event: StorageEvent) => {
-    if (event.key !== storageKey) return;
+    if (event.key !== null && event.key !== storageKey) return;
     cached = undefined;
     listener();
   };

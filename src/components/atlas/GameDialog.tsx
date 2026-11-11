@@ -26,10 +26,8 @@ export interface OpenGame {
 const scrollToPassage =
   (gameQid: string): CiteHandler =>
   (passage) => {
-    const section =
-      passage.gameQid === gameQid ? document.getElementById(passage.id) : null;
-    if (section === null) return false;
-    revealPassage(section);
+    if (passage.gameQid !== gameQid) return false;
+    revealPassage(document.getElementById(passage.id));
     return true;
   };
 

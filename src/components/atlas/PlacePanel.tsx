@@ -130,7 +130,7 @@ export function PlacePanel({
   return (
     <section
       aria-label={`Games from ${pin.label}`}
-      className="absolute top-3 right-3 bottom-3 flex w-[min(22rem,calc(100%-1.5rem))] flex-col rounded-xl border bg-popover text-popover-foreground shadow-lg"
+      className="mx-3 flex h-1/2 shrink-0 flex-col rounded-xl border bg-popover text-popover-foreground shadow-lg md:my-3 md:ml-0 md:h-auto md:w-88"
     >
       <header className="flex items-start justify-between gap-2 border-b p-3">
         <div>
