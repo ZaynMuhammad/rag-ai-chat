@@ -12,6 +12,7 @@ export async function GET(
 ) {
   const decoded = decodeQuery({
     placeQid: (await context.params).qid,
+    kind: request.nextUrl.searchParams.get("kind"),
     page: Number(request.nextUrl.searchParams.get("page") ?? "1"),
   });
   if (Exit.isFailure(decoded)) {

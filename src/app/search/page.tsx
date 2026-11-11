@@ -2,7 +2,6 @@ import { Effect, Exit, Schema } from "effect";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { runAtRequestTime } from "@/app/run";
-import type { SearchParams } from "@/app/params";
 import { AssistAnswer } from "@/components/AssistAnswer";
 import { SearchResultList } from "@/components/SearchResultList";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,8 @@ export const metadata: Metadata = {
   title: "Search · Game Atlas",
   referrer: "no-referrer",
 };
+
+type SearchParams = Awaited<PageProps<"/search">["searchParams"]>;
 
 const decodeSearchQuery = Schema.decodeUnknownExit(SearchQuery);
 

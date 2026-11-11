@@ -8,7 +8,7 @@ export const toSseBody = (events: Stream.Stream<ChatEvent>) =>
   events.pipe(
     Stream.map((event) => `data: ${encodeEvent(event)}\n\n`),
     Stream.encodeText,
-    Stream.toReadableStream(),
+    Stream.toReadableStreamEffect(),
   );
 
 export async function* readSse(body: ReadableStream<Uint8Array>) {

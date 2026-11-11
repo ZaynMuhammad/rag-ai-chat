@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Stream } from "effect";
+import { Effect, Stream } from "effect";
 import type { ChatEvent } from "./ChatProtocol";
 import { readSse, toSseBody } from "./sse";
 
@@ -24,7 +24,10 @@ const rechunk = async (body: ReadableStream<Uint8Array>, size: number) => {
 
 describe("sse", () => {
   it("round-trips events when chunks split frames and multibyte characters", async () => {
-    const body = await rechunk(toSseBody(Stream.fromIterable(events)), 3);
+    const body = await rechunk(
+      await Effect.runPromise(toSseBody(Stream.fromIterable(events))),
+      3,
+    );
     const decoded = await Array.fromAsync(readSse(body));
     assert.deepStrictEqual(decoded, events);
   });
