@@ -11,7 +11,7 @@ import {
   Schema,
 } from "effect";
 import { RateLimiter } from "effect/persistence";
-import type { IssuedSession } from "./SessionProtocol";
+import type { IssuedSession, Tier } from "./SessionProtocol";
 
 export class InvalidSession extends Schema.TaggedError<InvalidSession>()(
   "InvalidSession",
@@ -28,11 +28,14 @@ export interface Limit {
   readonly window: Duration.Input;
 }
 
-export interface SessionPolicy {
-  readonly lifetime: Duration.Input;
-  readonly issuance: Limit;
+export interface TierLimits {
   readonly chatPerSession: Limit;
   readonly chatOverall: Limit;
+}
+
+export interface SessionPolicy extends TierLimits {
+  readonly lifetime: Duration.Input;
+  readonly issuance: Limit;
 }
 
 export const defaultPolicy: SessionPolicy = {
@@ -40,6 +43,11 @@ export const defaultPolicy: SessionPolicy = {
   issuance: { limit: 120, window: "1 minute" },
   chatPerSession: { limit: 10, window: "1 minute" },
   chatOverall: { limit: 600, window: "1 minute" },
+};
+
+export const defaultProLimits: TierLimits = {
+  chatPerSession: { limit: 60, window: "1 minute" },
+  chatOverall: { limit: 1200, window: "1 minute" },
 };
 
 const tokenVersion = "v1";
@@ -50,16 +58,47 @@ const signature = (secret: Uint8Array, payload: string) =>
 const sameBytes = (a: Uint8Array, b: Uint8Array) =>
   a.length === b.length && timingSafeEqual(a, b);
 
+export const consumeWith =
+  (limiter: RateLimiter.RateLimiter) =>
+  (key: string, { limit, window }: Limit, tokens = 1) =>
+    limiter
+      .consume({
+        algorithm: "token-bucket",
+        onExceeded: "fail",
+        key,
+        limit,
+        window,
+        tokens,
+      })
+      .pipe(
+        Effect.catchTag("RateLimiterError", (error) =>
+          error.reason._tag === "RateLimitExceeded"
+            ? Effect.fail(
+                new RateLimited({
+                  retryAfterSeconds: Math.max(
+                    1,
+                    Math.ceil(Duration.toSeconds(error.reason.retryAfter)),
+                  ),
+                }),
+              )
+            : Effect.die(error),
+        ),
+      );
+
 export class AnonymousSessions extends Context.Service<
   AnonymousSessions,
   {
     readonly issue: Effect.Effect<IssuedSession, RateLimited>;
+    readonly issuePro: Effect.Effect<IssuedSession>;
     admitChat(
       token: string | null,
     ): Effect.Effect<void, InvalidSession | RateLimited>;
   }
 >()("rag-ai-chat/gateway/AnonymousSessions") {
-  static readonly make = (policy: SessionPolicy) =>
+  static readonly make = (
+    policy: SessionPolicy,
+    pro: TierLimits = defaultProLimits,
+  ) =>
     Effect.gen(function* () {
       const limiter = yield* RateLimiter.RateLimiter;
       const configuredSecret = yield* Config.option(
@@ -70,73 +109,66 @@ export class AnonymousSessions extends Context.Service<
         onSome: (value) => Buffer.from(Redacted.value(value)),
       });
 
-      const consume = (key: string, { limit, window }: Limit) =>
-        limiter
-          .consume({
-            algorithm: "token-bucket",
-            onExceeded: "fail",
-            key,
-            limit,
-            window,
-          })
-          .pipe(
-            Effect.catchTag("RateLimiterError", (error) =>
-              error.reason._tag === "RateLimitExceeded"
-                ? Effect.fail(
-                    new RateLimited({
-                      retryAfterSeconds: Math.max(
-                        1,
-                        Math.ceil(Duration.toSeconds(error.reason.retryAfter)),
-                      ),
-                    }),
-                  )
-                : Effect.die(error),
-            ),
-          );
+      const consume = consumeWith(limiter);
+      const limits = { free: policy, pro } satisfies Record<Tier, TierLimits>;
 
-      const issue = Effect.gen(function* () {
-        yield* consume("issue", policy.issuance);
-        const expiresAt =
-          (yield* Clock.currentTimeMillis) + Duration.toMillis(policy.lifetime);
-        const payload = `${tokenVersion}.${randomBytes(16).toString("base64url")}.${expiresAt}`;
-        return {
-          token: `${payload}.${signature(secret, payload).toString("base64url")}`,
-          expiresAt,
-        };
-      }).pipe(Effect.withSpan("AnonymousSessions.issue"));
+      const mint = (tier: Tier) =>
+        Effect.gen(function* () {
+          const expiresAt =
+            (yield* Clock.currentTimeMillis) +
+            Duration.toMillis(policy.lifetime);
+          const id = randomBytes(16).toString("base64url");
+          const payload = `${tokenVersion}.${id}.${expiresAt}${tier === "pro" ? ".pro" : ""}`;
+          return {
+            token: `${payload}.${signature(secret, payload).toString("base64url")}`,
+            expiresAt,
+            tier,
+          };
+        });
 
-      const sessionId = Effect.fn("AnonymousSessions.sessionId")(function* (
+      const issue = consume("issue", policy.issuance).pipe(
+        Effect.andThen(mint("free")),
+        Effect.withSpan("AnonymousSessions.issue"),
+      );
+
+      const issuePro = mint("pro").pipe(
+        Effect.withSpan("AnonymousSessions.issuePro"),
+      );
+
+      const session = Effect.fn("AnonymousSessions.session")(function* (
         token: string | null,
       ) {
-        const [version, id, expiresAt, signed, ...rest] = (token ?? "").split(
-          ".",
-        );
+        const value = token ?? "";
+        const cut = value.lastIndexOf(".");
+        const payload = value.slice(0, Math.max(cut, 0));
+        const [version, id, expiresAt, tier, ...rest] = payload.split(".");
         if (
+          cut < 0 ||
+          !sameBytes(
+            Buffer.from(value.slice(cut + 1), "base64url"),
+            signature(secret, payload),
+          ) ||
           version !== tokenVersion ||
           id === undefined ||
           expiresAt === undefined ||
-          signed === undefined ||
+          (tier !== undefined && tier !== "pro") ||
           rest.length > 0 ||
-          !sameBytes(
-            Buffer.from(signed, "base64url"),
-            signature(secret, `${version}.${id}.${expiresAt}`),
-          ) ||
           Number(expiresAt) <= (yield* Clock.currentTimeMillis)
         ) {
           return yield* new InvalidSession();
         }
-        return id;
+        return { id, tier: tier ?? "free" } as const;
       });
 
       const admitChat = Effect.fn("AnonymousSessions.admitChat")(function* (
         token: string | null,
       ) {
-        const id = yield* sessionId(token);
-        yield* consume(`session:${id}`, policy.chatPerSession);
-        yield* consume("chat", policy.chatOverall);
+        const { id, tier } = yield* session(token);
+        yield* consume(`session:${id}`, limits[tier].chatPerSession);
+        yield* consume(`chat:${tier}`, limits[tier].chatOverall);
       });
 
-      return AnonymousSessions.of({ issue, admitChat });
+      return AnonymousSessions.of({ issue, issuePro, admitChat });
     });
 
   static readonly layer = Layer.effect(
