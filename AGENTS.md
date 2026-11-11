@@ -59,6 +59,7 @@ Treat the rest of this document as good defaults, not hard rules. The developer'
 ## Verifying
 
 - `bun run check` runs format check, lint, typecheck, and tests. Run it before you call work done, and run `bun run build` too before you push. CI runs the same steps.
+- `bun run lint:go` (golangci-lint and gofumpt, zero issues) and `bun run test:go` (`go test -race`) cover the Go load generator in `loadgen/`. They stay out of `bun run check` because Go is optional; run them when you touch `loadgen/`, and CI runs them on every push.
 - `bun run format` and `bun run lint:fix` fix most failures. Do not silence a lint rule to get green. If a rule is wrong for the case, disable it on that line and say why in your summary.
 - `typecheck` also runs the Effect language service, which fails on Effects that are never yielded or run.
 - Tests use Vitest with `@effect/vitest`. Put them next to the code as `*.test.ts`, write them with `it.effect`, and import helpers from `@effect/vitest`, not `vitest`. Network calls to anything other than localhost throw in tests.
@@ -86,9 +87,10 @@ Treat the rest of this document as good defaults, not hard rules. The developer'
 
 - `src/app` - Next.js App Router pages, layouts, and route handlers.
 - `src/corpus` and `scripts/corpus` - build the game corpus (`data/corpus/games.sqlite`, git-ignored) from Wikidata and structured-wikipedia. `CorpusStore.ts` owns the schema and migrations.
-- `src/server` - Effect services behind the route handlers: `games/GameCatalog` (browse), `search/Retriever` (BM25), `chat/GroundedChat` (citations, streaming, failover), `gateway/AnonymousSessions` (tokens and rate limits). `chat/GroundedChat.ts` and its test are the reference for a service, its layer, and how to test it. `corpus/CorpusFixture.ts` builds an in-memory corpus for tests.
+- `src/server` - Effect services behind the route handlers: `games/GameCatalog` (globe pins, games per place, articles), `search/Retriever` (BM25), `chat/GroundedChat` (citations, streaming, failover), `gateway/AnonymousSessions` (tokens and rate limits). `chat/GroundedChat.ts` and its test are the reference for a service, its layer, and how to test it. `corpus/CorpusFixture.ts` builds an in-memory corpus for tests.
 - `src/server/provider` - providers as `effect/ai` `LanguageModel` layers. `MockProvider.extractive()` answers by quoting retrieved sentences, `MockProvider.model()` replies with a fixed text, and `MockProvider.failing` simulates an outage. Use them in dev, tests, and load scenarios.
 - `evals/games` - the frozen eval set and the latest retrieval results. `bun run evals:retrieval` regenerates the results; `bun run load:steady` runs the load scenario against a running server.
+- `loadgen/` - the Go load generator, its own module on the standard library only. `steady`, `spike` and `zipf` traffic shapes fire on schedule and time each chat from when it was due, which corrects for coordinated omission. `bun run load:go <scenario> -url <base>` builds the static binary and runs it.
 - `.repos/effect` - Effect 4 source, vendored as a squashed git subtree at the tag matching the installed `effect` version. Read `.repos/effect/LLMS.md` before writing Effect code. Prefer its patterns over invented ones. Never edit or import from it. When you bump `effect`, resync the subtree to the matching tag.
 
 ## Taste

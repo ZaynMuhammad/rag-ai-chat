@@ -2,7 +2,7 @@ export type AnswerSegment =
   | { readonly kind: "text"; readonly text: string }
   | { readonly kind: "citation"; readonly number: number };
 
-const citationPattern = /\[(\d{1,2})\]/g;
+export const citationPattern = /\[(\d{1,2})\]/g;
 
 export const answerSegments = (
   answer: string,

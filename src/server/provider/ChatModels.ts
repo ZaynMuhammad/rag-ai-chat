@@ -14,11 +14,16 @@ import { MockProvider, MockSchedule, parseMockSchedule } from "./MockProvider";
 
 const extractive = MockProvider.extractive({ tokenDelay: Duration.millis(15) });
 
-const anthropic = (model: string) =>
-  AnthropicLanguageModel.model(model, {
+type AnthropicConfig = Parameters<typeof AnthropicLanguageModel.model>[1];
+
+export const anthropic = (
+  model: string,
+  config: AnthropicConfig = {
     max_tokens: 1024,
     output_config: { effort: "low" },
-  }).pipe(
+  },
+) =>
+  AnthropicLanguageModel.model(model, config).pipe(
     Layer.provide(
       AnthropicClient.layerConfig({
         apiKey: Config.Redacted("ANTHROPIC_API_KEY"),

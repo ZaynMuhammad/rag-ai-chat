@@ -1,10 +1,12 @@
 import { Schema } from "effect";
 import { Qid } from "./Scope";
 
+export const PinKind = Schema.Literals(["studio", "country"]);
+
 export const Pin = Schema.Struct({
   placeQid: Schema.String,
   label: Schema.String,
-  kind: Schema.Literals(["studio", "country"]),
+  kind: PinKind,
   latitude: Schema.Number,
   longitude: Schema.Number,
   games: Schema.Number,
@@ -21,6 +23,7 @@ export type PlaceGame = typeof PlaceGame.Type;
 
 export const PlaceGamesQuery = Schema.Struct({
   placeQid: Qid,
+  kind: PinKind,
   page: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: 1_000 })),
 });
 export type PlaceGamesQuery = typeof PlaceGamesQuery.Type;
