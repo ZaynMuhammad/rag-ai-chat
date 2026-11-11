@@ -1,0 +1,8 @@
+.next
+out
+build
+coverage
+.repos
+.claude/worktrees
+bun.lock
+next-env.d.ts

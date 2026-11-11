@@ -6,26 +6,51 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "lint": "next typegen && eslint --max-warnings 0",
+    "lint:fix": "eslint --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "next typegen && tsc --noEmit && effect-language-service diagnostics --project tsconfig.json --strict",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "bun run format:check && bun run lint && bun run typecheck && bun run test",
+    "corpus:regions": "bun scripts/corpus/fetch-m49.ts",
+    "corpus:build": "bun scripts/corpus/build-corpus.ts",
+    "corpus:export-regions": "bun scripts/corpus/export-regions.ts",
+    "evals:build": "bun scripts/evals/build-eval-set.ts",
+    "evals:check": "bun scripts/evals/check-eval-set.ts",
+    "evals:retrieval": "bun scripts/evals/run-retrieval.ts",
+    "load:steady": "bun scripts/load/steady-chat.ts"
   },
   "dependencies": {
+    "@effect/ai-anthropic": "4.1.2",
+    "@effect/platform-bun": "4.1.2",
+    "@effect/sql-sqlite-bun": "4.1.2",
+    "@effect/sql-sqlite-node": "4.1.2",
     "effect": "4.1.2",
+    "hyparquet": "1.32.0",
+    "hyparquet-compressors": "1.1.3",
     "next": "16.4.5",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@effect/language-service": "^0.87.5",
+    "@effect/vitest": "4.1.2",
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.10",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.1.0"
   },
-  "packageManager": "bun@1.3.0",
+  "packageManager": "bun@1.3.13",
   "ignoreScripts": [
     "sharp",
     "unrs-resolver"
@@ -33,5 +58,8 @@
   "trustedDependencies": [
     "sharp",
     "unrs-resolver"
-  ]
+  ],
+  "engines": {
+    "node": ">=24"
+  }
 }
