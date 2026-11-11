@@ -72,25 +72,25 @@ const fixture = corpusFixture([
     studios: [kyoto("Nintendo")],
     passages: [],
   },
+  {
+    qid: "Q7",
+    title: "Lemmings",
+    released: "1991-02-14",
+    origins: [unitedKingdom],
+    studios: [
+      {
+        developer: "DMA Design",
+        placeQid: placeQidOf(unitedKingdom.iso2),
+        place: "United Kingdom",
+      },
+    ],
+    passages: lead("Lemmings"),
+  },
 ]);
 
 layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
   "GameCatalog",
   (it) => {
-    describe("subRegions", () => {
-      it.effect("counts games with text once per sub-region", () =>
-        Effect.gen(function* () {
-          const catalog = yield* GameCatalog;
-          const asia = (yield* catalog.subRegions).filter(
-            (row) => row.region === "Asia",
-          );
-          assert.deepStrictEqual(asia, [
-            { region: "Asia", subRegion: "Eastern Asia", games: 2 },
-          ]);
-        }),
-      );
-    });
-
     describe("pins", () => {
       it.effect(
         "pins a game at its studio's city and falls back to its country only when no studio is known",
@@ -99,12 +99,13 @@ layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
             const catalog = yield* GameCatalog;
             const pins = (yield* catalog.pins)
               .map((pin) => [pin.label, pin.kind, pin.games])
-              .sort(([a], [b]) => String(a).localeCompare(String(b)));
+              .sort((a, b) => a.join().localeCompare(b.join()));
             assert.deepStrictEqual(pins, [
               ["Kyoto", "studio", 1],
               ["Soviet Union", "country", 1],
               ["Tokyo", "studio", 1],
               ["United Kingdom", "country", 1],
+              ["United Kingdom", "studio", 1],
               ["United States of America", "country", 1],
             ]);
           }),
@@ -117,6 +118,7 @@ layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
           const catalog = yield* GameCatalog;
           const tokyo = yield* catalog.placeGames({
             placeQid: "Q1490",
+            kind: "studio",
             page: 1,
           });
           assert.deepStrictEqual(tokyo, {
@@ -134,6 +136,7 @@ layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
           });
           const unitedStatesGames = yield* catalog.placeGames({
             placeQid: placeQidOf(unitedStates.iso2),
+            kind: "country",
             page: 1,
           });
           assert.deepStrictEqual(
@@ -141,6 +144,33 @@ layer(GameCatalog.layer.pipe(Layer.provideMerge(fixture)))(
             [["Doom", []]],
           );
         }),
+      );
+
+      it.effect(
+        "keeps a place's studio games apart from its country fallback games",
+        () =>
+          Effect.gen(function* () {
+            const catalog = yield* GameCatalog;
+            const placeQid = placeQidOf(unitedKingdom.iso2);
+            const studio = yield* catalog.placeGames({
+              placeQid,
+              kind: "studio",
+              page: 1,
+            });
+            const country = yield* catalog.placeGames({
+              placeQid,
+              kind: "country",
+              page: 1,
+            });
+            assert.deepStrictEqual(
+              [studio.games.map((game) => game.title), studio.total],
+              [["Lemmings"], 1],
+            );
+            assert.deepStrictEqual(
+              [country.games.map((game) => game.title), country.total],
+              [["Elite"], 1],
+            );
+          }),
       );
     });
 

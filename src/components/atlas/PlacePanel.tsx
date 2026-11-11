@@ -6,13 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { ChatGame } from "@/lib/chats";
 import type {
   Pin,
   PlaceGame,
   PlaceGamesPage,
 } from "@/server/games/GameProtocol";
-
-export type GameRef = Pick<PlaceGame, "qid" | "title">;
 
 export interface PlaceSelection {
   readonly pin: Pin;
@@ -26,7 +25,7 @@ function GameRow({
   onOpen,
 }: {
   game: PlaceGame;
-  onOpen: (game: GameRef) => void;
+  onOpen: (game: ChatGame) => void;
 }) {
   const year = game.released?.slice(0, 4) ?? null;
   return (
@@ -73,7 +72,7 @@ function Page({
 }: {
   promise: Promise<PlaceGamesPage | null>;
   isLast: boolean;
-  onOpen: (game: GameRef) => void;
+  onOpen: (game: ChatGame) => void;
   onMore: (page: number) => void;
 }) {
   const page = use(promise);
@@ -124,14 +123,14 @@ export function PlacePanel({
 }: {
   selection: PlaceSelection;
   onClose: () => void;
-  onOpen: (game: GameRef) => void;
+  onOpen: (game: ChatGame) => void;
   onMore: (page: number) => void;
 }) {
   const { pin, pages } = selection;
   return (
     <section
       aria-label={`Games from ${pin.label}`}
-      className="absolute top-3 right-3 bottom-3 flex w-[min(22rem,calc(100%-1.5rem))] flex-col rounded-xl border bg-popover text-popover-foreground shadow-lg"
+      className="mx-3 flex h-1/2 shrink-0 flex-col rounded-xl border bg-popover text-popover-foreground shadow-lg md:my-3 md:ml-0 md:h-auto md:w-88"
     >
       <header className="flex items-start justify-between gap-2 border-b p-3">
         <div>

@@ -170,7 +170,7 @@ export function Globe({
               pin.kind === "studio" ? "var(--background)" : "var(--primary)"
             }
             strokeWidth={pin === selected ? 2 : 0.75}
-            className="cursor-pointer transition-[r] hover:fill-opacity-100"
+            className="cursor-pointer transition-[r] hover:[fill-opacity:1]"
             onPointerEnter={() => {
               setHovered(pin);
             }}
@@ -199,7 +199,7 @@ export function Globe({
           </text>
         )}
       </svg>
-      <div className="absolute right-3 bottom-3 flex flex-col gap-1">
+      <div className="absolute bottom-3 left-3 flex flex-col gap-1">
         <Button
           variant="outline"
           size="icon-sm"

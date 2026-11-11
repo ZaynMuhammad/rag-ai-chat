@@ -5,8 +5,8 @@
 Explore Wikipedia's video game articles on a globe of the studios that made them, and ask questions that are answered only from those articles, with numbered citations. No accounts, no cookies, no request logs.
 
 - **Explore** 24,887 games with article text on a globe. Each pin is a studio's headquarters city; games whose studio city isn't on Wikidata sit on their country instead. Click a pin to list its games with genre and release year.
-- **Read** a game's article in a dialog, linked to the exact Wikipedia revision it came from, with a chat about that game beside it.
-- **Ask** about one game, or about every game from a region and era. Each answer streams with `[n]` citations that link to the passage they came from, and names the model that wrote it.
+- **Read** a game's article in a dialog, linked to the exact Wikipedia revision it came from.
+- **Ask** about that one game beside its article, or about every game from the main chat box. Each answer streams with `[n]` citations that open the passage they came from, and names the model that wrote it. Past chats are listed in the sidebar and saved only in the browser.
 
 ## Numbers
 
@@ -46,7 +46,7 @@ question + scope (region, years, or one game)
   ──► Citations event ──► model stream ──► Delta events ──► Done { model }
 ```
 
-- **Corpus.** [`src/corpus`](src/corpus) and [`scripts/corpus`](scripts/corpus) build `data/corpus/games.sqlite`. Wikidata picks the games, their countries of origin, their developers' headquarters cities, and their genres. A headquarters that is a whole country is dropped, so the game falls back to its country. UN M49 turns a country into a region. Wikimedia's pre-parsed `structured-wikipedia` dump supplies the text, joined on Wikidata QID, so renames and redirects don't matter.
+- **Corpus.** [`src/corpus`](src/corpus) and [`scripts/corpus`](scripts/corpus) build `data/corpus/games.sqlite`. Wikidata picks the games, their countries of origin, their developers' headquarters cities, and their genres. A headquarters that is a whole country is dropped, so the game falls back to its country pin. UN M49 turns a country into a region. Wikimedia's pre-parsed `structured-wikipedia` dump supplies the text, joined on Wikidata QID, so renames and redirects don't matter.
 - **Release dates** keep the precision Wikidata states, so a game known only by year shows "1985", not "1 Jan 1985". Truncated ISO dates sort correctly as plain strings.
 - **Retrieval** is BM25 in SQLite FTS5 (porter stemming, diacritics folded), filtered by the chat's scope. It reads the corpus through `node:sqlite`, so there is no native addon. [`Retriever.ts`](src/server/search/Retriever.ts)
 - **Grounded chat** sends the retrieved passages first, then streams the answer. Providers form an Effect `ExecutionPlan`: if one fails before its first token, the next takes over; once tokens have streamed, a failure is reported rather than restarted. When nothing in scope matches, it says so without calling a model. [`GroundedChat.ts`](src/server/chat/GroundedChat.ts)
@@ -55,6 +55,7 @@ question + scope (region, years, or one game)
 ## Privacy
 
 - **No identity.** Rate limits use anonymous session tokens: 128 random bits and an expiry, signed with HMAC. The browser holds the token in memory, not in a cookie, and it expires after 30 minutes.
+- **Chats stay on the device.** The sidebar's chat history lives in the browser's `localStorage`. The server never receives the list.
 - **No logs.** Nothing logs or stores an IP, user agent, token, or question. Lint rejects code that reads identifying headers.
 - **Bounded abuse.** Each token gets 10 chats a minute. Global caps on chats and on new tokens bound abuse without knowing who anyone is.
 - **Clean errors.** Provider errors never echo the question back to the client. A test checks this.

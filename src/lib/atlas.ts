@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 import {
   type GameDetail,
+  type Pin,
   GameDetail as GameDetailSchema,
   type PlaceGamesPage,
   PlaceGamesPage as PlaceGamesPageSchema,
@@ -19,11 +20,11 @@ const fetchJson = async <A>(url: string, decode: (json: unknown) => A) => {
 };
 
 export const fetchPlaceGames = (
-  placeQid: string,
+  pin: Pin,
   page: number,
 ): Promise<PlaceGamesPage | null> =>
   fetchJson(
-    `/api/places/${encodeURIComponent(placeQid)}/games?page=${page}`,
+    `/api/places/${encodeURIComponent(pin.placeQid)}/games?kind=${pin.kind}&page=${page}`,
     decodePlaceGames,
   );
 
