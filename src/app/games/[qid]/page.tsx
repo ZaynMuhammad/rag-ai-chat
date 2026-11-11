@@ -19,19 +19,19 @@ function Article({ game }: { game: GameDetail }) {
   const regions = [...new Set(game.origins.map((origin) => origin.subRegion))];
   return (
     <article className="min-w-0">
-      <p className="text-sm font-medium text-accent">
+      <p className="text-sm font-medium text-primary">
         {formatReleased(game.released)}
       </p>
       <h1 className="mt-1 text-3xl font-semibold tracking-tight">
         {game.title}
       </h1>
-      <p className="mt-2 text-sm text-muted">
+      <p className="mt-2 text-sm text-muted-foreground">
         {places.join(", ")} · {regions.join(", ")}
       </p>
       {game.description !== null && (
-        <p className="mt-1 text-sm text-muted">{game.description}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{game.description}</p>
       )}
-      <p className="mt-3 text-xs text-muted">
+      <p className="mt-3 text-xs text-muted-foreground">
         From{" "}
         {game.url !== null && (
           <a href={game.url} className="underline" rel="noreferrer">
@@ -61,10 +61,10 @@ function Article({ game }: { game: GameDetail }) {
             <section
               key={passage.id}
               id={passage.id}
-              className="scroll-mt-20 rounded-md target:bg-accent/10 target:p-3"
+              className="scroll-mt-20 rounded-md target:bg-primary/10 target:p-3"
             >
               {name !== null && (
-                <h2 className="mb-2 text-sm font-semibold text-muted">
+                <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
                   {name}
                 </h2>
               )}
@@ -109,8 +109,8 @@ async function Game({ params }: { params: Promise<{ qid: string }> }) {
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
       <Article game={game.value} />
       <aside className="lg:sticky lg:top-4 lg:h-[calc(100dvh-6rem)]">
-        <div className="flex h-[32rem] flex-col rounded-lg border border-line bg-card lg:h-full">
-          <p className="border-b border-line px-4 py-2 text-sm font-medium">
+        <div className="flex h-[32rem] flex-col rounded-lg border border-border bg-card lg:h-full">
+          <p className="border-b border-border px-4 py-2 text-sm font-medium">
             Ask about {game.value.title}
           </p>
           <ChatPanel
@@ -130,12 +130,17 @@ async function Game({ params }: { params: Promise<{ qid: string }> }) {
 export default function GamePage({ params }: PageProps<"/games/[qid]">) {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
-      <Link href="/" className="text-sm text-muted hover:text-accent">
+      <Link
+        href="/"
+        className="text-sm text-muted-foreground hover:text-primary"
+      >
         ← All games
       </Link>
       <div className="mt-4">
         <Suspense
-          fallback={<p className="text-sm text-muted">Loading article…</p>}
+          fallback={
+            <p className="text-sm text-muted-foreground">Loading article…</p>
+          }
         >
           <Game params={params} />
         </Suspense>

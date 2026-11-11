@@ -7,7 +7,7 @@ import { AreaOptions } from "./AreaSelect";
 import { ChatPanel } from "./ChatPanel";
 
 const field =
-  "h-9 rounded-md border border-line bg-card px-2 text-sm outline-none focus:border-accent";
+  "h-9 rounded-md border border-border bg-card px-2 text-sm outline-none focus:border-primary";
 
 const parseArea = (value: string): Pick<Scope, "region" | "subRegion"> => {
   const [region, subRegion] = value.split("|");
@@ -45,9 +45,9 @@ export function ScopedChat({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-line bg-card">
-      <div className="flex flex-wrap items-end gap-3 border-b border-line p-3">
-        <label className="flex flex-col gap-1 text-xs text-muted">
+    <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
+      <div className="flex flex-wrap items-end gap-3 border-b border-border p-3">
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           Only games from
           <select
             value={area}
@@ -59,7 +59,7 @@ export function ScopedChat({
             <AreaOptions subRegions={subRegions} />
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs text-muted">
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           Released from
           <input
             type="number"
@@ -71,7 +71,7 @@ export function ScopedChat({
             className={`${field} w-24`}
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-muted">
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
           to
           <input
             type="number"

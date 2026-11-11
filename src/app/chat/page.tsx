@@ -26,11 +26,13 @@ export default function ChatPage({ searchParams }: PageProps<"/chat">) {
       <h1 className="text-xl font-semibold tracking-tight">
         Ask the game articles
       </h1>
-      <p className="mt-1 mb-4 text-sm text-muted">
+      <p className="mt-1 mb-4 text-sm text-muted-foreground">
         Narrow by region and release years to keep answers on the games you
         mean.
       </p>
-      <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
+      <Suspense
+        fallback={<p className="text-sm text-muted-foreground">Loading…</p>}
+      >
         <Chat searchParams={searchParams} />
       </Suspense>
     </main>
