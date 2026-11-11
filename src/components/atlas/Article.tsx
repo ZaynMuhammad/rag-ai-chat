@@ -82,16 +82,20 @@ export function ArticleText({
 }) {
   return (
     <div className="space-y-6">
-      {game.passages.map((passage) => {
+      {game.passages.map((passage, index) => {
         const name = sectionName(game, passage.heading);
+        const continuesSection =
+          game.passages[index - 1]?.heading === passage.heading;
         return (
           <section
             key={passage.id}
             id={passage.id}
             ref={passage.id === focusPassageId ? revealPassage : undefined}
-            className="scroll-mt-4 rounded-md transition-colors target:bg-primary/10 target:p-3"
+            className={`scroll-mt-4 rounded-md transition-colors target:bg-primary/10 target:p-3 ${
+              continuesSection ? "-mt-3" : ""
+            }`}
           >
-            {name !== null && (
+            {name !== null && !continuesSection && (
               <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
                 {name}
               </h3>
