@@ -43,7 +43,7 @@ export const defaultPolicy: SessionPolicy = {
   lifetime: "30 minutes",
   issuance: { limit: 120, window: "1 minute" },
   chatPerSession: { limit: 10, window: "1 minute" },
-  chatOverall: { limit: 600, window: "1 minute" },
+  chatOverall: { limit: 240, window: "1 minute" },
   search: { limit: 5, window: "15 seconds" },
 };
 
