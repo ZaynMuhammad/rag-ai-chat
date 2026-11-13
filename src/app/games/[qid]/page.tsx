@@ -1,12 +1,12 @@
 import { Effect, Option } from "effect";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ArticleMeta, ArticleText } from "@/components/atlas/Article";
 import { GameChat } from "@/components/atlas/GameChat";
-import { RevealHashPassage } from "@/components/atlas/RevealHashPassage";
+import { SiteHeader } from "@/components/SiteHeader";
 import { linkPreview, siteDescription } from "@/lib/siteMetadata";
+import { RevealHashPassage } from "@/components/atlas/RevealHashPassage";
 import { GameCatalog } from "@/server/games/GameCatalog";
 import { runAtRequestTime } from "@/app/run";
 
@@ -60,21 +60,14 @@ async function Game({ params }: { params: Promise<{ qid: string }> }) {
 export default function GamePage({ params }: PageProps<"/games/[qid]">) {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
-      <Link
-        href="/"
-        className="text-sm text-muted-foreground hover:text-primary"
+      <SiteHeader />
+      <Suspense
+        fallback={
+          <p className="text-sm text-muted-foreground">Loading article…</p>
+        }
       >
-        ← Back to the globe
-      </Link>
-      <div className="mt-4">
-        <Suspense
-          fallback={
-            <p className="text-sm text-muted-foreground">Loading article…</p>
-          }
-        >
-          <Game params={params} />
-        </Suspense>
-      </div>
+        <Game params={params} />
+      </Suspense>
     </main>
   );
 }
