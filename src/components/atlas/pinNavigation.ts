@@ -38,3 +38,21 @@ export const nextPin = (
   }
   return best;
 };
+
+export const pinAt = (
+  placed: ReadonlyArray<PlacedPin>,
+  x: number,
+  y: number,
+  reach: (pin: Pin) => number,
+): PlacedPin | undefined => {
+  let best: PlacedPin | undefined;
+  let bestDistance = Infinity;
+  for (const candidate of placed) {
+    const distance = Math.hypot(candidate.x - x, candidate.y - y);
+    if (distance <= reach(candidate.pin) && distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return best;
+};

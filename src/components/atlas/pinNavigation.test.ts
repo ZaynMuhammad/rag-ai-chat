@@ -1,15 +1,15 @@
 import { describe, expect, it } from "@effect/vitest";
 import type { Pin } from "@/server/games/GameProtocol";
-import { nextPin } from "./pinNavigation";
+import { nextPin, pinAt } from "./pinNavigation";
 
-const at = (label: string, x: number, y: number) => ({
+const at = (label: string, x: number, y: number, games = 1) => ({
   pin: {
     placeQid: label,
     label,
     kind: "studio" as const,
     latitude: 0,
     longitude: 0,
-    games: 1,
+    games,
   } satisfies Pin,
   x,
   y,
@@ -37,5 +37,32 @@ describe("nextPin", () => {
 
   it("ignores keys that are not arrows", () => {
     expect(nextPin(placed, origin, "Enter")).toBeUndefined();
+  });
+});
+
+describe("pinAt", () => {
+  const london = at("London", 100, 100, 332);
+  const tonbridge = at("Tonbridge", 102, 101);
+  const lonely = at("Lonely", 160, 100);
+  const paintedSmallestLast = [london, tonbridge, lonely];
+  const drawn = (pin: Pin) => (pin.games > 100 ? 8 : 3);
+  const reach = (minimum: number) => (pin: Pin) =>
+    Math.max(drawn(pin), minimum);
+
+  it("picks a large pin when its centre is tapped, even under a smaller one", () => {
+    expect(pinAt(paintedSmallestLast, 100, 100, reach(0))).toBe(london);
+  });
+
+  it("still reaches a small pin when its own centre is tapped", () => {
+    expect(pinAt(paintedSmallestLast, 102, 101, reach(0))).toBe(tonbridge);
+  });
+
+  it("lets a touch land a finger's width away from a tiny pin", () => {
+    expect(pinAt(paintedSmallestLast, 175, 100, reach(3))).toBeUndefined();
+    expect(pinAt(paintedSmallestLast, 175, 100, reach(22))).toBe(lonely);
+  });
+
+  it("finds nothing away from every pin", () => {
+    expect(pinAt(paintedSmallestLast, 300, 300, reach(22))).toBeUndefined();
   });
 });
