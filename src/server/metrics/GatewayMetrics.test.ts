@@ -2,7 +2,7 @@ import { assert, describe, it } from "@effect/vitest";
 import { ConfigProvider, Duration, Effect, Layer, Metric } from "effect";
 import { RateLimiter } from "effect/persistence";
 import { answerCacheLayer } from "@/server/chat/AnswerCache";
-import { GroundedChat } from "@/server/chat/GroundedChat";
+import { type ChatProvider, GroundedChat } from "@/server/chat/GroundedChat";
 import { corpusFixture, sovietUnion } from "@/server/corpus/CorpusFixture";
 import {
   AnonymousSessions,
@@ -35,36 +35,42 @@ const policy: SessionPolicy = {
   issuance: { limit: 10, window: "1 minute" },
   chatPerSession: { limit: 4, window: "1 minute" },
   chatOverall: { limit: 100, window: "1 minute" },
+  search: { limit: 100, window: "1 minute" },
 };
 
-const gateway = Layer.mergeAll(
-  observedChat.pipe(
-    Layer.provide(
-      answerCacheLayer({
-        capacity: 10,
-        timeToLive: "10 minutes",
-      }),
+const gatewayWith = (model: ChatProvider["model"]) =>
+  Layer.mergeAll(
+    observedChat.pipe(
+      Layer.provide(
+        answerCacheLayer({
+          capacity: 10,
+          timeToLive: "10 minutes",
+        }),
+      ),
+      Layer.provide(
+        GroundedChat.layer(
+          [
+            {
+              id: "mock-extractive",
+              provider: "mock",
+              model,
+            },
+          ],
+          Duration.seconds(2),
+        ).pipe(Layer.provide(CircuitBreaker.layer)),
+      ),
     ),
-    Layer.provide(
-      GroundedChat.layer(
-        [
-          {
-            id: "mock-extractive",
-            provider: "mock",
-            model: MockProvider.extractive({ tokenDelay: Duration.zero }),
-          },
-        ],
-        Duration.seconds(2),
-      ).pipe(Layer.provide(CircuitBreaker.layer)),
+    Layer.effect(AnonymousSessions, AnonymousSessions.make(policy)).pipe(
+      Layer.provide(RateLimiter.layer),
+      Layer.provide(RateLimiter.layerStoreMemory),
     ),
-  ),
-  Layer.effect(AnonymousSessions, AnonymousSessions.make(policy)).pipe(
-    Layer.provide(RateLimiter.layer),
-    Layer.provide(RateLimiter.layerStoreMemory),
-  ),
-).pipe(
-  Layer.provide(observedRetrieval.pipe(Layer.provide(Retriever.layerBm25))),
-  Layer.provide(fixture),
+  ).pipe(
+    Layer.provide(observedRetrieval.pipe(Layer.provide(Retriever.layerBm25))),
+    Layer.provide(fixture),
+  );
+
+const gateway = gatewayWith(
+  MockProvider.extractive({ tokenDelay: Duration.zero }),
 );
 
 const sensitiveQuestion = "Which puzzle game helps with my anxiety medication?";
@@ -155,6 +161,35 @@ describe("gateway metrics", () => {
         Effect.provide(gateway),
         Effect.provideService(Metric.MetricRegistry, new Map()),
       ),
+  );
+
+  it.effect("count an answer the provider cut off as failed", () =>
+    Effect.gen(function* () {
+      const sessions = yield* AnonymousSessions;
+      const { token } = yield* sessions.issue;
+      assert.strictEqual(yield* chat(token, "Who created Tetris?"), 200);
+
+      const scraped = yield* scrapeMetrics(null);
+      const exposition = yield* Effect.promise(() => scraped.text());
+      assert.strictEqual(
+        sample(exposition, 'chat_requests_total{outcome="failed"}'),
+        "1",
+      );
+      assert.isUndefined(
+        sample(exposition, 'chat_requests_total{outcome="ok"}'),
+      );
+      assert.notInclude(exposition, "chat_answers_total{");
+    }).pipe(
+      Effect.provide(
+        gatewayWith(
+          MockProvider.model({
+            tokenDelay: Duration.zero,
+            finishReason: "length",
+          }),
+        ),
+      ),
+      Effect.provideService(Metric.MetricRegistry, new Map()),
+    ),
   );
 
   it.effect("require METRICS_TOKEN as a bearer token when it is set", () =>

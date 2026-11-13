@@ -5,8 +5,8 @@ import { runAtRequestTime } from "@/app/run";
 import { AssistAnswer } from "@/components/AssistAnswer";
 import { SearchResultList } from "@/components/SearchResultList";
 import { Button } from "@/components/ui/button";
+import { admittedSearch } from "@/server/gateway/SearchGateway";
 import { SearchQuery } from "@/server/search/SearchProtocol";
-import { SearchResults } from "@/server/search/SearchResults";
 
 export const metadata: Metadata = {
   title: "Search · Game Atlas",
@@ -73,8 +73,20 @@ async function Results({
     );
   }
   const page = await runAtRequestTime(
-    Effect.flatMap(SearchResults, (search) => search.search(query)),
+    admittedSearch(query).pipe(
+      Effect.catchTag("RateLimited", () => Effect.succeed("busy" as const)),
+    ),
   );
+  if (page === "busy") {
+    return (
+      <>
+        <SearchBox query={query} />
+        <p role="status" className="mt-4 text-sm text-muted-foreground">
+          Search is busy. Try again in a moment.
+        </p>
+      </>
+    );
+  }
   return (
     <>
       <SearchBox query={query} />
