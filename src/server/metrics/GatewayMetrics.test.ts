@@ -35,6 +35,7 @@ const policy: SessionPolicy = {
   issuance: { limit: 10, window: "1 minute" },
   chatPerSession: { limit: 4, window: "1 minute" },
   chatOverall: { limit: 100, window: "1 minute" },
+  search: { limit: 100, window: "1 minute" },
 };
 
 const gatewayWith = (model: ChatProvider["model"]) =>

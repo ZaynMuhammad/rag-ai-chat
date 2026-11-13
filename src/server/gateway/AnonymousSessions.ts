@@ -36,6 +36,7 @@ export interface TierLimits {
 export interface SessionPolicy extends TierLimits {
   readonly lifetime: Duration.Input;
   readonly issuance: Limit;
+  readonly search: Limit;
 }
 
 export const defaultPolicy: SessionPolicy = {
@@ -43,6 +44,7 @@ export const defaultPolicy: SessionPolicy = {
   issuance: { limit: 120, window: "1 minute" },
   chatPerSession: { limit: 10, window: "1 minute" },
   chatOverall: { limit: 600, window: "1 minute" },
+  search: { limit: 5, window: "15 seconds" },
 };
 
 export const defaultProLimits: TierLimits = {
@@ -90,6 +92,7 @@ export class AnonymousSessions extends Context.Service<
   {
     readonly issue: Effect.Effect<IssuedSession, RateLimited>;
     readonly issuePro: Effect.Effect<IssuedSession>;
+    readonly admitSearch: Effect.Effect<void, RateLimited>;
     admitChat(
       token: string | null,
     ): Effect.Effect<void, InvalidSession | RateLimited>;
@@ -135,6 +138,10 @@ export class AnonymousSessions extends Context.Service<
         Effect.withSpan("AnonymousSessions.issuePro"),
       );
 
+      const admitSearch = consume("search", policy.search).pipe(
+        Effect.withSpan("AnonymousSessions.admitSearch"),
+      );
+
       const session = Effect.fn("AnonymousSessions.session")(function* (
         token: string | null,
       ) {
@@ -168,7 +175,12 @@ export class AnonymousSessions extends Context.Service<
         yield* consume(`chat:${tier}`, limits[tier].chatOverall);
       });
 
-      return AnonymousSessions.of({ issue, issuePro, admitChat });
+      return AnonymousSessions.of({
+        issue,
+        issuePro,
+        admitSearch,
+        admitChat,
+      });
     });
 
   static readonly layer = Layer.effect(
