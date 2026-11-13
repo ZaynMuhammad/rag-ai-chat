@@ -4,6 +4,7 @@ import { Array as Arr, Config, Duration, Effect, Layer, Option } from "effect";
 import { FetchHttpClient } from "effect/http";
 import type { ChatProvider } from "@/server/chat/GroundedChat";
 import { MockProvider, MockSchedule, parseMockSchedule } from "./MockProvider";
+import { type BudgetLimit, ProviderBudget } from "./ProviderBudget";
 
 const maxAnswerTokens = 1024;
 
@@ -50,6 +51,22 @@ const openAiCompatible = (model: string) =>
     Layer.orDie,
   );
 
+const budgetLimit = (
+  name: string,
+  unit: BudgetLimit["unit"],
+  window: Duration.Input,
+) =>
+  Config.option(Config.Int(name)).pipe(
+    Config.map(Option.map((limit): BudgetLimit => ({ unit, limit, window }))),
+  );
+
+const openAiLimits = Config.all([
+  budgetLimit("OPENAI_REQUESTS_PER_MINUTE", "requests", "1 minute"),
+  budgetLimit("OPENAI_REQUESTS_PER_DAY", "requests", "1 day"),
+  budgetLimit("OPENAI_TOKENS_PER_MINUTE", "tokens", "1 minute"),
+  budgetLimit("OPENAI_TOKENS_PER_DAY", "tokens", "1 day"),
+]).pipe(Config.map(Arr.getSomes));
+
 const mockPrimary = Effect.gen(function* () {
   const schedule = yield* Config.option(
     Config.schema(MockSchedule, "MOCK_PRIMARY"),
@@ -76,6 +93,7 @@ const openAiProviders = Effect.gen(function* () {
       id: model.value,
       provider: "openai",
       model: openAiCompatible(model.value),
+      budget: yield* ProviderBudget.make(yield* openAiLimits, maxAnswerTokens),
     },
   ];
 });

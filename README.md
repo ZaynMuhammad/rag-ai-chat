@@ -96,6 +96,7 @@ question + scope (region, years, or one game)
 - **Answer cache.** A first-turn question is keyed by an HMAC of the normalized question (NFKC, case, spacing, end punctuation), its scope, the model that answers it, the configured models, and the corpus version. Identical questions in flight share one upstream stream: a late joiner replays what was sent, then follows the live tail, and the stream finishes even if the client that started it leaves. Only complete answers written by that model without a provider failure are kept, in an LRU of 1,000 entries for 10 minutes. It wraps `GroundedChat` as a layer. [`AnswerCache.ts`](src/server/chat/AnswerCache.ts)
 - **Metrics.** `GET /api/metrics` serves Prometheus text from Effect `Metric`: time to first token, retrieval latency, cache hits, misses and coalesced joins, chat outcomes, and answers by model. [`GatewayMetrics.ts`](src/server/metrics/GatewayMetrics.ts)
 - **Providers.** With no keys, the only provider is `mock-extractive`, which quotes the best-matching retrieved sentences with citations. Dev, tests, and load tests never spend money. With `ANTHROPIC_API_KEY`, Claude Haiku 5.5 answers at low effort. With `OPENAI_MODEL`, any OpenAI-compatible endpoint joins the plan: OpenAI, Groq, Together, or a local Ollama. The mock is always the last fallback. `GET /api/models` lists the configured models in fallback order, and a chat may pick one with `model`: it goes first, and the rest stay as fallback. [`ChatModels.ts`](src/server/provider/ChatModels.ts)
+- **Provider budget.** The OpenAI-compatible provider can be held under a free tier's limits: requests and tokens, per minute and per day. Each limit is a token bucket that refills continuously, and a chat is sent only if every bucket has room for it. It reserves the prompt, estimated at 3 bytes per token (Groq counted 3.7 to 5 on corpus prompts), plus the full 1,024-token answer allowance, so the estimate runs high. A chat over budget skips the provider without calling it and the next one answers; the circuit breaker does not count that as a failure. State is in memory, per process, so a restart starts with full buckets. [`ProviderBudget.ts`](src/server/provider/ProviderBudget.ts)
 
 ## Privacy
 
@@ -151,21 +152,23 @@ bun run corpus:embed         # downloads the 23 MB model, embeds every passage; 
 bun run dev                  # http://localhost:3000
 ```
 
-| Environment variable          | Default                     | Effect                                                                                              |
-| ----------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`           | unset                       | Unset: the free extractive mock answers. Set: Claude answers.                                       |
-| `ANTHROPIC_MODEL`             | `claude-haiku-5-5`          | Model used when a key is set                                                                        |
-| `OPENAI_MODEL`                | unset                       | Set: an OpenAI-compatible model joins the plan, e.g. `gpt-5-mini` or `llama3.2:3b`                  |
-| `OPENAI_BASE_URL`             | `https://api.openai.com/v1` | e.g. `https://api.groq.com/openai/v1` or `http://localhost:11434/v1` for Ollama                     |
-| `OPENAI_API_KEY`              | unset                       | Bearer key for that endpoint; Ollama needs none                                                     |
-| `FIRST_TOKEN_TIMEOUT`         | `2 seconds`                 | How long a provider may take to send its first token before the next one takes over                 |
-| `MOCK_PRIMARY`                | unset                       | e.g. `ok@15,hang@15,outage@15,ok`: a scheduled mock ahead of the others, for load tests             |
-| `RETRIEVAL_MODE`              | `dense`                     | `dense`, `bm25`, or `hybrid`. Without embeddings, `dense` and `hybrid` use `bm25` and log a warning |
-| `RETRIEVAL_COMMON_WORD_SHARE` | unset                       | e.g. `0.1`: every BM25 match needs a word found in under 10% of passages (faster)                   |
-| `EMBEDDING_MODEL_DIRECTORY`   | `data/models`               | Where `corpus:embed` put the model; the server never downloads it                                   |
-| `SESSION_SECRET`              | random per process          | HMAC key for session tokens; set it when running more than one process                              |
-| `CORPUS_DATABASE`             | `data/corpus/games.sqlite`  | Corpus location                                                                                     |
-| `METRICS_TOKEN`               | unset                       | Set: `/api/metrics` requires it as a bearer token                                                   |
+| Environment variable                                    | Default                     | Effect                                                                                              |
+| ------------------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`                                     | unset                       | Unset: the free extractive mock answers. Set: Claude answers.                                       |
+| `ANTHROPIC_MODEL`                                       | `claude-haiku-5-5`          | Model used when a key is set                                                                        |
+| `OPENAI_MODEL`                                          | unset                       | Set: an OpenAI-compatible model joins the plan, e.g. `gpt-5-mini` or `llama3.2:3b`                  |
+| `OPENAI_BASE_URL`                                       | `https://api.openai.com/v1` | e.g. `https://api.groq.com/openai/v1` or `http://localhost:11434/v1` for Ollama                     |
+| `OPENAI_API_KEY`                                        | unset                       | Bearer key for that endpoint; Ollama needs none                                                     |
+| `OPENAI_REQUESTS_PER_MINUTE`, `OPENAI_REQUESTS_PER_DAY` | unset                       | Request budget for that endpoint, e.g. `30` and `1000` for Groq's free tier. Unset: no limit        |
+| `OPENAI_TOKENS_PER_MINUTE`, `OPENAI_TOKENS_PER_DAY`     | unset                       | Token budget for that endpoint, e.g. `8000` and `200000` for Groq's free tier. Unset: no limit      |
+| `FIRST_TOKEN_TIMEOUT`                                   | `2 seconds`                 | How long a provider may take to send its first token before the next one takes over                 |
+| `MOCK_PRIMARY`                                          | unset                       | e.g. `ok@15,hang@15,outage@15,ok`: a scheduled mock ahead of the others, for load tests             |
+| `RETRIEVAL_MODE`                                        | `dense`                     | `dense`, `bm25`, or `hybrid`. Without embeddings, `dense` and `hybrid` use `bm25` and log a warning |
+| `RETRIEVAL_COMMON_WORD_SHARE`                           | unset                       | e.g. `0.1`: every BM25 match needs a word found in under 10% of passages (faster)                   |
+| `EMBEDDING_MODEL_DIRECTORY`                             | `data/models`               | Where `corpus:embed` put the model; the server never downloads it                                   |
+| `SESSION_SECRET`                                        | random per process          | HMAC key for session tokens; set it when running more than one process                              |
+| `CORPUS_DATABASE`                                       | `data/corpus/games.sqlite`  | Corpus location                                                                                     |
+| `METRICS_TOKEN`                                         | unset                       | Set: `/api/metrics` requires it as a bearer token                                                   |
 
 ## Evals and load
 

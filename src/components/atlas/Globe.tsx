@@ -3,6 +3,7 @@
 import { geoDistance, geoGraticule10, geoOrthographic, geoPath } from "d3-geo";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import {
+  type KeyboardEvent,
   type PointerEvent,
   type WheelEvent,
   useEffect,
@@ -14,6 +15,7 @@ import type { GeometryCollection, Topology } from "topojson-specification";
 import landTopology from "world-atlas/land-110m.json";
 import { Button } from "@/components/ui/button";
 import type { Pin } from "@/server/games/GameProtocol";
+import { nextPin, type PlacedPin } from "./pinNavigation";
 import { paintPixelEarth, unitsPerCanvasPixel } from "./pixelEarth";
 
 type Rotation = readonly [number, number];
@@ -54,6 +56,8 @@ const pinRadius = (pin: Pin) =>
 
 export const pinKey = (pin: Pin) => `${pin.placeQid}-${pin.kind}`;
 
+const labelAnchor = (x: number) => (x < size / 2 ? "start" : "end");
+
 const pinCaption = (pin: Pin) =>
   `${pin.label} · ${pin.games.toLocaleString("en")} ${pin.games === 1 ? "game" : "games"}${
     pin.kind === "country" ? " · studio city unknown" : ""
@@ -71,6 +75,7 @@ export function Globe({
   const [rotation, setRotation] = useState(startRotation);
   const [zoom, setZoom] = useState(minZoom);
   const [hovered, setHovered] = useState<Pin | null>(null);
+  const [focused, setFocused] = useState<Pin | null>(null);
   const [earthStyle, setEarthStyle] = useState<EarthStyle>("Realistic");
   const drag = useRef<Drag | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -93,7 +98,7 @@ export function Globe({
   const path = geoPath(projection);
   const center: [number, number] = [-rotation[0], -rotation[1]];
 
-  const placed = pins.flatMap((pin) => {
+  const placed = pins.flatMap((pin): ReadonlyArray<PlacedPin> => {
     const coordinates: [number, number] = [pin.longitude, pin.latitude];
     if (geoDistance(coordinates, center) > Math.PI / 2 - 0.02) return [];
     const point = projection(coordinates);
@@ -101,7 +106,28 @@ export function Globe({
       ? []
       : [{ pin, x: hundredths(point[0]), y: hundredths(point[1]) }];
   });
-  const label = placed.find(({ pin }) => pin === (hovered ?? selected));
+  const label = placed.find(
+    ({ pin }) => pin === (hovered ?? focused ?? selected),
+  );
+  const tabStop =
+    placed.find(({ pin }) => pin === (focused ?? selected)) ?? placed[0];
+
+  const onPinKeyDown = (
+    event: KeyboardEvent<SVGCircleElement>,
+    from: PlacedPin,
+  ) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect(from.pin);
+      return;
+    }
+    const target = nextPin(placed, from, event.key);
+    if (target === undefined) return;
+    event.preventDefault();
+    event.currentTarget.ownerSVGElement
+      ?.querySelector<SVGCircleElement>(`[data-pin="${pinKey(target.pin)}"]`)
+      ?.focus();
+  };
 
   const unitsPerPixel = (svg: SVGSVGElement) => {
     const box = svg.getBoundingClientRect();
@@ -163,8 +189,8 @@ export function Globe({
       )}
       <svg
         viewBox={`0 0 ${size} ${size}`}
-        role="img"
-        aria-label="Globe of video game studios"
+        role="group"
+        aria-label="Globe of video game studios. Use the arrow keys to move between places and Enter to open one."
         className="relative size-full cursor-grab touch-none select-none active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -196,37 +222,53 @@ export function Globe({
             />
           </>
         )}
-        {placed.map(({ pin, x, y }) => (
-          <circle
-            key={pinKey(pin)}
-            cx={x}
-            cy={y}
-            r={pinRadius(pin) * (pin === selected ? 1.4 : 1)}
-            fill="var(--primary)"
-            fillOpacity={pin.kind === "studio" ? 0.8 : 0.25}
-            stroke={
-              pin.kind === "studio" ? "var(--background)" : "var(--primary)"
-            }
-            strokeWidth={pin === selected ? 2 : 0.75}
-            className="cursor-pointer transition-[r] hover:[fill-opacity:1]"
-            onPointerEnter={() => {
-              setHovered(pin);
-            }}
-            onPointerLeave={() => {
-              setHovered(null);
-            }}
-            onClick={() => {
-              onSelect(pin);
-            }}
-          >
-            <title>{pinCaption(pin)}</title>
-          </circle>
-        ))}
+        {placed.map((entry) => {
+          const { pin, x, y } = entry;
+          return (
+            <circle
+              key={pinKey(pin)}
+              data-pin={pinKey(pin)}
+              role="button"
+              aria-label={pinCaption(pin)}
+              tabIndex={entry === tabStop ? 0 : -1}
+              cx={x}
+              cy={y}
+              r={pinRadius(pin) * (pin === selected ? 1.4 : 1)}
+              fill="var(--primary)"
+              fillOpacity={pin.kind === "studio" ? 0.8 : 0.25}
+              stroke={
+                pin.kind === "studio" ? "var(--background)" : "var(--primary)"
+              }
+              strokeWidth={pin === selected ? 2 : 0.75}
+              className="cursor-pointer transition-[r] outline-none hover:[fill-opacity:1] focus-visible:[fill-opacity:1] focus-visible:[stroke-width:3] focus-visible:[stroke:var(--foreground)]"
+              onPointerEnter={() => {
+                setHovered(pin);
+              }}
+              onPointerLeave={() => {
+                setHovered(null);
+              }}
+              onFocus={() => {
+                setFocused(pin);
+              }}
+              onBlur={() => {
+                setFocused(null);
+              }}
+              onKeyDown={(event) => {
+                onPinKeyDown(event, entry);
+              }}
+              onClick={() => {
+                onSelect(pin);
+              }}
+            >
+              <title>{pinCaption(pin)}</title>
+            </circle>
+          );
+        })}
         {label !== undefined && (
           <text
             x={label.x}
             y={label.y - pinRadius(label.pin) - 8}
-            textAnchor="middle"
+            textAnchor={labelAnchor(label.x)}
             fill="var(--foreground)"
             stroke="var(--background)"
             strokeWidth={4}

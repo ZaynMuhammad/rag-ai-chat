@@ -44,6 +44,7 @@ const decodeChats = Schema.decodeUnknownOption(
 
 let cached: ReadonlyArray<StoredChat> | undefined;
 const listeners = new Set<() => void>();
+const deletedIds = new Set<string>();
 
 const withStorage = <A>(access: (storage: Storage) => A, fallback: A) => {
   try {
@@ -92,6 +93,7 @@ export const findChat = (id: string) =>
   snapshot().find((chat) => chat.id === id);
 
 export const saveChat = (chat: StoredChat) => {
+  if (deletedIds.has(chat.id)) return;
   write(
     [chat, ...snapshot().filter((other) => other.id !== chat.id)].slice(
       0,
@@ -101,6 +103,7 @@ export const saveChat = (chat: StoredChat) => {
 };
 
 export const deleteChat = (id: string) => {
+  deletedIds.add(id);
   write(snapshot().filter((chat) => chat.id !== id));
 };
 
