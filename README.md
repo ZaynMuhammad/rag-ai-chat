@@ -4,6 +4,8 @@
 
 Explore Wikipedia's video game articles on a globe of the studios that made them, and ask questions that are answered only from those articles, with numbered citations. No accounts, no cookies, no request logs.
 
+**Live demo:** [game-atlas.zaynmuhammad95.workers.dev](https://game-atlas.zaynmuhammad95.workers.dev). It answers with a free-tier model held under its daily limits; when the budget is spent, the extractive mock answers instead. [How it is served](#the-live-demo)
+
 ![The globe in dark mode, with a pin for each studio city](assets/screenshots/globe.png)
 
 **Headline numbers**, measured on a 2-core VPS; load runs use the mock provider:
@@ -167,6 +169,20 @@ Browser                                   Server
 | `PRO_SIGNING_KEY_EXPIRES` | 7 days from start     | One ISO date per key, comma-separated. Credentials stop verifying after their key's date. |
 
 `bun run bench:pro` times each step.
+
+## The live demo
+
+```text
+browser ──► Cloudflare Worker on workers.dev ──► Cloudflare Tunnel ──► next start on 127.0.0.1, 2-core VPS
+```
+
+- **No open ports.** The VPS accepts no public connections. `cloudflared` dials out, and a Workers VPC binding lets the Worker reach the app's loopback port through that tunnel.
+- **The app never receives who is asking.** [`deploy/worker/index.js`](deploy/worker/index.js) forwards an allowlist of request headers and drops the rest. Pointed at a header-echo server, the same Worker delivered only `accept`, `accept-encoding`, `authorization`, `host`, and the two `x-forwarded-*` headers it sets itself: no IP address, user agent, or cookie. Worker logging is off.
+- **What Cloudflare sees.** Cloudflare terminates TLS, so it sees each visitor's IP address and URL like any CDN does, and it adds its own network error reporting headers. "No request logs" describes this app and its Worker, not Cloudflare's network.
+- **Small edge duties.** The Worker caches `/_next/static` in Cloudflare's cache and rejects request bodies over 64 KB before they reach the server.
+- **Free to run.** The Worker, the tunnel, and the model's free tier cost nothing. The provider budget keeps the model under its limits, and the mock answers when it is spent.
+
+`cd deploy/worker && bunx wrangler deploy` publishes the Worker. The tunnel and the `vpc_services` id in [`wrangler.jsonc`](deploy/worker/wrangler.jsonc) belong to this deployment; create your own with `wrangler vpc service create`.
 
 ## Run it
 
