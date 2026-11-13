@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { ChatPanel, type CiteHandler } from "@/components/ChatPanel";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -18,6 +18,14 @@ import {
   type UiMessage,
 } from "@/lib/chats";
 import type { Pin } from "@/server/games/GameProtocol";
+import {
+  type GameView,
+  gamePath,
+  leaveView,
+  pushView,
+  replaceView,
+  viewInHistory,
+} from "./atlasHistory";
 import { ChatSidebar } from "./ChatSidebar";
 import { GameDialog, type OpenGame } from "./GameDialog";
 import { Globe, pinKey } from "./Globe";
@@ -38,8 +46,44 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
   const [place, setPlace] = useState<PlaceSelection | null>(null);
   const [openGame, setOpenGame] = useState<OpenGame | null>(null);
 
+  const placeKey = place === null ? null : pinKey(place.pin);
+
+  const showPlace = (pin: Pin | undefined) => {
+    setPlace(
+      pin === undefined ? null : { pin, pages: [fetchPlaceGames(pin, 1)] },
+    );
+  };
+
+  const showGame = (view: GameView | null) => {
+    setOpenGame(
+      view === null ? null : { ...view, detail: fetchGame(view.game.qid) },
+    );
+  };
+
+  const restoreView = useEffectEvent((state: unknown) => {
+    const view = viewInHistory(state);
+    if (view.place !== placeKey)
+      showPlace(pins.find((pin) => pinKey(pin) === view.place));
+    if (view.game?.chatId !== openGame?.chatId) showGame(view.game);
+  });
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- history.state is only readable after hydration
+    restoreView(window.history.state);
+    const onPopState = (event: PopStateEvent) => {
+      restoreView(event.state);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, []);
+
   const selectPin = (pin: Pin) => {
-    setPlace({ pin, pages: [fetchPlaceGames(pin, 1)] });
+    const view = { place: pinKey(pin), game: null };
+    if (place === null) pushView(view);
+    else replaceView(view);
+    showPlace(pin);
   };
 
   const showMorePlaceGames = (page: number) => {
@@ -55,12 +99,16 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
     gameChatId: string,
     focusPassageId?: string,
   ) => {
-    setOpenGame({
+    const view: GameView = {
       game,
       chatId: gameChatId,
-      detail: fetchGame(game.qid),
       ...(focusPassageId === undefined ? {} : { focusPassageId }),
-    });
+    };
+    pushView(
+      { place: placeKey, game: view },
+      gamePath(game.qid, focusPassageId),
+    );
+    showGame(view);
   };
 
   const openStoredChat = (chat: StoredChat) => {
@@ -70,13 +118,13 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
 
   const startNewChat = () => {
     setChatId(crypto.randomUUID());
-    setPlace(null);
+    if (place !== null) leaveView();
   };
 
   const deleteStoredChat = (chat: StoredChat) => {
     deleteChat(chat.id);
     if (chat.id === chatId) setChatId(crypto.randomUUID());
-    if (chat.id === openGame?.chatId) setOpenGame(null);
+    if (chat.id === openGame?.chatId) leaveView();
   };
 
   const openCitedArticle: CiteHandler = (passage) => {
@@ -139,9 +187,7 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
                 <PlacePanel
                   key={pinKey(place.pin)}
                   selection={place}
-                  onClose={() => {
-                    setPlace(null);
-                  }}
+                  onClose={leaveView}
                   onOpen={(game) => {
                     openGameChat(game, crypto.randomUUID());
                   }}
@@ -152,12 +198,7 @@ export function Atlas({ pins }: { pins: ReadonlyArray<Pin> }) {
           }
         />
       </SidebarInset>
-      <GameDialog
-        open={openGame}
-        onClose={() => {
-          setOpenGame(null);
-        }}
-      />
+      <GameDialog open={openGame} onClose={leaveView} />
     </SidebarProvider>
   );
 }
