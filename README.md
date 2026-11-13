@@ -4,22 +4,42 @@
 
 Explore Wikipedia's video game articles on a globe of the studios that made them, and ask questions that are answered only from those articles, with numbered citations. No accounts, no cookies, no request logs.
 
-- **Explore** 24,887 games with article text on a globe. Each pin is a studio's headquarters city; games whose studio city isn't on Wikidata sit on their country instead. Click a pin to list its games with genre and release year.
+![The globe in dark mode, with a pin for each studio city](assets/screenshots/globe.png)
+
+**Headline numbers**, measured on a 2-core VPS; load runs use the mock provider:
+
+- **Provider outage:** errors fall from 26.3% to 0 with a per-provider circuit breaker and a 2 s first-token deadline. [Outage table](#outage)
+- **Answer cache:** time to first token p50 drops from 409 ms to 9 ms on Zipf traffic, and 61% of chats are answered without calling a model. [Cache table](#answer-cache)
+- **Dense retrieval:** hit@5 0.806 against BM25's 0.669, at a retrieval p99 of 183 ms. [Retrieval table](#retrieval)
+- **Steady load:** 4 chats/s for 60 s with dense retrieval, 0 errors and a 176 ms p50 time to first token. [Load table](#steady-load)
+
+**What it does:**
+
+- **Explore** 24,887 games with article text on a globe, drawn realistic or as pixel art, in light or dark mode. Each pin is a studio's headquarters city; games whose studio city isn't on Wikidata sit on their country instead. Click a pin to list its games with genre and release year.
 - **Read** a game's article in a dialog, linked to the exact Wikipedia revision it came from.
 - **Ask** about that one game beside its article, or about every game from the main chat box. Each answer streams with `[n]` citations that open the passage they came from, and names the model that wrote it. Past chats are listed in the sidebar and saved only in the browser.
+- **Search** the articles at `/search`: up to 10 games, each with its best-matching passage and the matched words highlighted. When the top results clearly answer the query, a cited AI answer streams above them; otherwise the page says so, shows its retrieval confidence, and lists the results alone.
+
+<p>
+  <a href="assets/screenshots/place-pixel.png"><img src="assets/screenshots/place-pixel.png" width="32%" alt="The pixel-art globe with the Warsaw pin open to its list of games"></a>
+  <a href="assets/screenshots/game-chat.png"><img src="assets/screenshots/game-chat.png" width="32%" alt="The Cyberpunk 2077 article beside a cited answer about its reception"></a>
+  <a href="assets/screenshots/search-assist.png"><img src="assets/screenshots/search-assist.png" width="32%" alt="Search results for a Chrono Trigger question with a cited AI answer above them"></a>
+</p>
 
 ## Numbers
 
 Measured on a 2-core VPS. Reproduce with the commands in [Evals and load](#evals-and-load).
 
-| Corpus                                                      |         |
-| ----------------------------------------------------------- | ------- |
-| Video games with an English article and a country of origin | 26,937  |
-| With article text                                           | 24,887  |
-| With a release date (Wikidata P577)                         | 25,638  |
-| With a studio city (developer's HQ, P178 → P159)            | 16,306  |
-| With a genre (P136)                                         | 25,221  |
-| Passages                                                    | 162,346 |
+| Corpus                                                                                                     |         |
+| ---------------------------------------------------------------------------------------------------------- | ------- |
+| Video games with an English Wikipedia article and a country of origin (P495, else the developer's country) | 26,937  |
+| With article text                                                                                          | 24,887  |
+| With a release date (Wikidata P577)                                                                        | 25,638  |
+| With a studio city (developer's HQ, P178 → P159)                                                           | 16,306  |
+| With a genre (P136)                                                                                        | 25,221  |
+| Passages                                                                                                   | 162,346 |
+
+<a id="retrieval"></a>
 
 | Retrieval eval: 160 frozen questions (HotpotQA, KILT NQ, hand-written) | BM25         | dense (default) | hybrid, RRF k=60 |
 | ---------------------------------------------------------------------- | ------------ | --------------- | ---------------- |
@@ -44,6 +64,8 @@ Measured on a 2-core VPS. Reproduce with the commands in [Evals and load](#evals
 
 The extractive mock quotes retrieved sentences verbatim and cites each one, so citation validity, uncited sentences, and lexical faithfulness sit at their ceilings by construction. They are there to catch a real model. Token F1 is low because the mock answers with whole sentences, not short spans. `EVAL_JUDGE=anthropic` adds a claim-by-claim LLM judge for faithfulness. [`AnswerMetrics.ts`](src/evals/AnswerMetrics.ts), [`FaithfulnessJudge.ts`](src/evals/FaithfulnessJudge.ts)
 
+<a id="steady-load"></a>
+
 | Load: 4 chats/s for 60 s, production build, mock provider | BM25                   | dense (default)    | hybrid                      |
 | --------------------------------------------------------- | ---------------------- | ------------------ | --------------------------- |
 | Errors                                                    | 0                      | 0                  | 0                           |
@@ -57,6 +79,8 @@ The extractive mock quotes retrieved sentences verbatim and cites each one, so c
 | Load at startup      | about 1 s                                                                      |
 | Embedding the corpus | 84 passages/s alone; 1 h 37 min for all of them at `nice 19` beside other jobs |
 
+<a id="answer-cache"></a>
+
 | Load: 2 chats/s for 90 s, production build, mock provider, full BM25  | before the answer cache | with it                     |
 | --------------------------------------------------------------------- | ----------------------- | --------------------------- |
 | Zipf (s = 1 over 180 questions): time to first token p50 / p95 / p99  | 409 / 1,100 / 1,303 ms  | 9 / 565 / 890 ms            |
@@ -64,6 +88,8 @@ The extractive mock quotes retrieved sentences verbatim and cites each one, so c
 | Zipf: answered without calling a model                                | 0%                      | 61% (109 hits, 1 coalesced) |
 | Uniform (180 distinct questions): time to first token p50 / p95 / p99 | 291 / 902 / 1,024 ms    | 284 / 1,056 / 1,360 ms      |
 | Errors                                                                | 0                       | 0                           |
+
+<a id="outage"></a>
 
 | Outage: 4 chats/s for 60 s, production build; the primary hangs at 15 s, fails at 30 s, recovers at 45 s | before: retry every request | circuit breaker + 2 s first-token deadline       |
 | -------------------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------------------------ |
@@ -92,6 +118,7 @@ question + scope (region, years, or one game)
 - **Retrieval** is dense by default. [snowflake-arctic-embed-xs](https://huggingface.co/Snowflake/snowflake-arctic-embed-xs) embeds the heading and the first 256 tokens of each passage (the whole passage for 65% of them; 128 tokens would cut 69%). Each vector is stored as int8 with one scale, which moves a unit dot product by under 0.01 in the tests. At startup every vector loads into one 64 MB matrix. A question is embedded with the model's query prefix and ranked by an exact brute-force dot product over the passages in scope: 162k × 384 takes about 70 ms in JavaScript, so there is no ANN index to tune or keep in sync. [`DenseIndex.ts`](src/server/search/DenseIndex.ts)
 - **BM25** in SQLite FTS5 (porter stemming, diacritics folded) is still there with `RETRIEVAL_MODE=bm25`. `hybrid` fuses the BM25 and dense top 50 with reciprocal rank fusion. Hybrid wins multi-hop questions, where exact names matter, but runs BM25's full scan on every chat and saturates the server at 4 chats/s, so it is opt-in. [`Retriever.ts`](src/server/search/Retriever.ts)
 - **Grounded chat** sends the retrieved passages first, then streams the answer. When nothing in scope matches, it says so without calling a model. [`GroundedChat.ts`](src/server/chat/GroundedChat.ts)
+- **Search and assist.** `/search` renders on the server and always ranks with BM25, whatever `RETRIEVAL_MODE` says. It takes the top 60 passages, keeps the best one per game, and shows up to 10 with highlighted snippets. An assist gate then scores how clearly those results answer the query from four signals: the top passage's score, its lead over the best passage from any other game, the share of query words it matches, and how many of the top 6 passages come from the same game. Each is scaled to 0–1 and they are averaged. At 0.7 or above, the browser sends the query to the grounded chat, which retrieves for itself, and streams its cited answer above the results; below that, the page makes no model call. [`AssistGate.ts`](src/server/search/AssistGate.ts), [`SearchResults.ts`](src/server/search/SearchResults.ts)
 - **Failover.** Providers form an Effect `ExecutionPlan`. A provider that fails, or sends no token within `FIRST_TOKEN_TIMEOUT` (2 s), hands over to the next; once tokens have streamed, a failure is reported rather than restarted. A per-provider circuit breaker opens after 5 consecutive failures or half the calls in 30 s, and requests then skip that provider without calling it. After 10 s one probe goes through, and a success closes it. The last provider in the plan is never cut off, since nothing is left to fail over to. State is in memory, per process, and labeled only by provider. [`CircuitBreaker.ts`](src/server/provider/CircuitBreaker.ts)
 - **Answer cache.** A first-turn question is keyed by an HMAC of the normalized question (NFKC, case, spacing, end punctuation), its scope, the model that answers it, the configured models, and the corpus version. Identical questions in flight share one upstream stream: a late joiner replays what was sent, then follows the live tail, and the stream finishes even if the client that started it leaves. Only complete answers written by that model without a provider failure are kept, in an LRU of 1,000 entries for 10 minutes. It wraps `GroundedChat` as a layer. [`AnswerCache.ts`](src/server/chat/AnswerCache.ts)
 - **Metrics.** `GET /api/metrics` serves Prometheus text from Effect `Metric`: time to first token, retrieval latency, cache hits, misses and coalesced joins, chat outcomes, and answers by model. [`GatewayMetrics.ts`](src/server/metrics/GatewayMetrics.ts)
@@ -204,4 +231,4 @@ It is an open-model generator: every chat fires at its scheduled time whether or
 
 ## Licensing
 
-Article text is from Wikipedia under CC BY-SA 4.0. Every game page links the revision it shows. Wikidata statements are CC0. Region names are from the UN M49 standard.
+Article text is from Wikipedia under CC BY-SA 4.0. Every game page links the revision it shows. Wikidata statements are CC0. Region names are from the UN M49 standard. The code is MIT licensed (see [LICENSE](LICENSE)); the article text it serves stays under CC BY-SA 4.0.
