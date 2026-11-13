@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ArticleMeta, ArticleText } from "@/components/atlas/Article";
 import { GameChat } from "@/components/atlas/GameChat";
+import { RevealHashPassage } from "@/components/atlas/RevealHashPassage";
 import { GameCatalog } from "@/server/games/GameCatalog";
 import { runAtRequestTime } from "@/app/run";
 
@@ -39,6 +40,7 @@ async function Game({ params }: { params: Promise<{ qid: string }> }) {
         <div className="mt-6">
           <ArticleText game={game.value} />
         </div>
+        <RevealHashPassage />
       </article>
       <aside className="lg:sticky lg:top-4 lg:h-[calc(100dvh-6rem)]">
         <div className="flex h-[32rem] flex-col rounded-xl border bg-card lg:h-full">
