@@ -18,6 +18,7 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { type StoredChat, useChats } from "@/lib/chats";
 
@@ -33,6 +34,7 @@ export function ChatSidebar({
   onDeleteChat: (chat: StoredChat) => void;
 }) {
   const chats = useChats();
+  const { setOpenMobile } = useSidebar();
   return (
     <Sidebar>
       <SidebarHeader>
@@ -41,7 +43,12 @@ export function ChatSidebar({
         </p>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={onNewChat}>
+            <SidebarMenuButton
+              onClick={() => {
+                onNewChat();
+                setOpenMobile(false);
+              }}
+            >
               <PlusIcon />
               New chat
             </SidebarMenuButton>
@@ -64,6 +71,7 @@ export function ChatSidebar({
                       isActive={chat.id === activeChatId}
                       onClick={() => {
                         onOpenChat(chat);
+                        setOpenMobile(false);
                       }}
                     >
                       {chat.game === null ? (
