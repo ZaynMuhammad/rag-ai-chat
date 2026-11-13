@@ -34,10 +34,7 @@
     "triggerRate": 0.322,
     "precision": 0.948,
     "recall": 0.417,
-    "precisionInterval": [
-      0.859,
-      0.982
-    ]
+    "precisionInterval": [0.859, 0.982]
   },
   "configured": {
     "threshold": 0.7,
@@ -49,10 +46,7 @@
     "triggerRate": 0.322,
     "precision": 0.948,
     "recall": 0.417,
-    "precisionInterval": [
-      0.859,
-      0.982
-    ]
+    "precisionInterval": [0.859, 0.982]
   },
   "configuredByGroup": {
     "evidence in top 6": {
@@ -98,10 +92,7 @@
         "triggerRate": 0.511,
         "precision": 0.913,
         "recall": 0.627,
-        "precisionInterval": [
-          0.797,
-          0.966
-        ]
+        "precisionInterval": [0.797, 0.966]
       },
       "test": {
         "threshold": 0.55,
@@ -113,10 +104,7 @@
         "triggerRate": 0.522,
         "precision": 0.872,
         "recall": 0.631,
-        "precisionInterval": [
-          0.748,
-          0.94
-        ]
+        "precisionInterval": [0.748, 0.94]
       }
     },
     {
@@ -132,10 +120,7 @@
         "triggerRate": 0.411,
         "precision": 0.946,
         "recall": 0.538,
-        "precisionInterval": [
-          0.823,
-          0.985
-        ]
+        "precisionInterval": [0.823, 0.985]
       },
       "test": {
         "threshold": 0.65,
@@ -147,10 +132,7 @@
         "triggerRate": 0.389,
         "precision": 0.886,
         "recall": 0.463,
-        "precisionInterval": [
-          0.74,
-          0.955
-        ]
+        "precisionInterval": [0.74, 0.955]
       }
     }
   ],
@@ -223,10 +205,7 @@
       "triggerRate": 1,
       "precision": 0.733,
       "recall": 1,
-      "precisionInterval": [
-        0.664,
-        0.793
-      ]
+      "precisionInterval": [0.664, 0.793]
     },
     {
       "threshold": 0.05,
@@ -238,10 +217,7 @@
       "triggerRate": 1,
       "precision": 0.733,
       "recall": 1,
-      "precisionInterval": [
-        0.664,
-        0.793
-      ]
+      "precisionInterval": [0.664, 0.793]
     },
     {
       "threshold": 0.1,
@@ -253,10 +229,7 @@
       "triggerRate": 1,
       "precision": 0.733,
       "recall": 1,
-      "precisionInterval": [
-        0.664,
-        0.793
-      ]
+      "precisionInterval": [0.664, 0.793]
     },
     {
       "threshold": 0.15,
@@ -268,10 +241,7 @@
       "triggerRate": 1,
       "precision": 0.733,
       "recall": 1,
-      "precisionInterval": [
-        0.664,
-        0.793
-      ]
+      "precisionInterval": [0.664, 0.793]
     },
     {
       "threshold": 0.2,
@@ -283,10 +253,7 @@
       "triggerRate": 1,
       "precision": 0.733,
       "recall": 1,
-      "precisionInterval": [
-        0.664,
-        0.793
-      ]
+      "precisionInterval": [0.664, 0.793]
     },
     {
       "threshold": 0.25,
@@ -298,10 +265,7 @@
       "triggerRate": 0.983,
       "precision": 0.746,
       "recall": 1,
-      "precisionInterval": [
-        0.677,
-        0.804
-      ]
+      "precisionInterval": [0.677, 0.804]
     },
     {
       "threshold": 0.3,
@@ -313,10 +277,7 @@
       "triggerRate": 0.961,
       "precision": 0.751,
       "recall": 0.985,
-      "precisionInterval": [
-        0.682,
-        0.81
-      ]
+      "precisionInterval": [0.682, 0.81]
     },
     {
       "threshold": 0.35,
@@ -328,10 +289,7 @@
       "triggerRate": 0.917,
       "precision": 0.776,
       "recall": 0.97,
-      "precisionInterval": [
-        0.706,
-        0.833
-      ]
+      "precisionInterval": [0.706, 0.833]
     },
     {
       "threshold": 0.4,
@@ -343,10 +301,7 @@
       "triggerRate": 0.817,
       "precision": 0.789,
       "recall": 0.879,
-      "precisionInterval": [
-        0.716,
-        0.847
-      ]
+      "precisionInterval": [0.716, 0.847]
     },
     {
       "threshold": 0.45,
@@ -358,10 +313,7 @@
       "triggerRate": 0.694,
       "precision": 0.824,
       "recall": 0.78,
-      "precisionInterval": [
-        0.748,
-        0.881
-      ]
+      "precisionInterval": [0.748, 0.881]
     },
     {
       "threshold": 0.5,
@@ -373,10 +325,7 @@
       "triggerRate": 0.583,
       "precision": 0.857,
       "recall": 0.682,
-      "precisionInterval": [
-        0.778,
-        0.911
-      ]
+      "precisionInterval": [0.778, 0.911]
     },
     {
       "threshold": 0.55,
@@ -388,10 +337,7 @@
       "triggerRate": 0.517,
       "precision": 0.892,
       "recall": 0.629,
-      "precisionInterval": [
-        0.813,
-        0.941
-      ]
+      "precisionInterval": [0.813, 0.941]
     },
     {
       "threshold": 0.6,
@@ -403,10 +349,7 @@
       "triggerRate": 0.456,
       "precision": 0.89,
       "recall": 0.553,
-      "precisionInterval": [
-        0.804,
-        0.941
-      ]
+      "precisionInterval": [0.804, 0.941]
     },
     {
       "threshold": 0.65,
@@ -418,10 +361,7 @@
       "triggerRate": 0.4,
       "precision": 0.917,
       "recall": 0.5,
-      "precisionInterval": [
-        0.83,
-        0.961
-      ]
+      "precisionInterval": [0.83, 0.961]
     },
     {
       "threshold": 0.7,
@@ -433,10 +373,7 @@
       "triggerRate": 0.322,
       "precision": 0.948,
       "recall": 0.417,
-      "precisionInterval": [
-        0.859,
-        0.982
-      ]
+      "precisionInterval": [0.859, 0.982]
     },
     {
       "threshold": 0.75,
@@ -448,10 +385,7 @@
       "triggerRate": 0.239,
       "precision": 0.93,
       "recall": 0.303,
-      "precisionInterval": [
-        0.814,
-        0.976
-      ]
+      "precisionInterval": [0.814, 0.976]
     },
     {
       "threshold": 0.8,
@@ -463,10 +397,7 @@
       "triggerRate": 0.172,
       "precision": 0.968,
       "recall": 0.227,
-      "precisionInterval": [
-        0.838,
-        0.994
-      ]
+      "precisionInterval": [0.838, 0.994]
     },
     {
       "threshold": 0.85,
@@ -478,10 +409,7 @@
       "triggerRate": 0.1,
       "precision": 1,
       "recall": 0.136,
-      "precisionInterval": [
-        0.824,
-        1
-      ]
+      "precisionInterval": [0.824, 1]
     },
     {
       "threshold": 0.9,
@@ -493,10 +421,7 @@
       "triggerRate": 0.044,
       "precision": 1,
       "recall": 0.061,
-      "precisionInterval": [
-        0.676,
-        1
-      ]
+      "precisionInterval": [0.676, 1]
     },
     {
       "threshold": 0.95,
@@ -508,10 +433,7 @@
       "triggerRate": 0.022,
       "precision": 1,
       "recall": 0.03,
-      "precisionInterval": [
-        0.51,
-        1
-      ]
+      "precisionInterval": [0.51, 1]
     },
     {
       "threshold": 1,
@@ -523,10 +445,7 @@
       "triggerRate": 0.006,
       "precision": 1,
       "recall": 0.008,
-      "precisionInterval": [
-        0.207,
-        1
-      ]
+      "precisionInterval": [0.207, 1]
     }
   ],
   "perQuestion": [
