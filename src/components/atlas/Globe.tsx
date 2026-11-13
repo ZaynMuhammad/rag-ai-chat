@@ -145,12 +145,10 @@ export function Globe({
     const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(
       toSvg,
     );
-    const minimumReach =
+    const reach =
       (event.pointerType === "touch" ? touchReach : pointerReach) *
       unitsPerPixel(svg);
-    return pinAt(placed, point.x, point.y, (pin) =>
-      Math.max(drawnRadius(pin), minimumReach),
-    );
+    return pinAt(placed, point.x, point.y, drawnRadius, reach);
   };
 
   const onPointerDown = (event: PointerEvent<SVGSVGElement>) => {
