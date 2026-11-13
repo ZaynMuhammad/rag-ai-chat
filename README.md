@@ -53,18 +53,20 @@ Measured on a 2-core VPS. Reproduce with the commands in [Evals and load](#evals
 | hit@5, multi-hop (56, mostly HotpotQA bridge)                          | 0.839        | 0.821           | 0.929            |
 | hit@5, single-hop (104, NQ and hand-written)                           | 0.577        | 0.798           | 0.740            |
 
-| Answer eval: 180 frozen questions through BM25 retrieval + `GroundedChat`, `mock-extractive` | all       | HotpotQA  | KILT NQ   | hand-written |
-| -------------------------------------------------------------------------------------------- | --------- | --------- | --------- | ------------ |
-| A gold passage is among the 6 sent                                                           | 0.681     | 0.836     | 0.507     | 0.833        |
-| Answer contains a gold answer                                                                | 0.356     | 0.400     | 0.240     | 0.567        |
-| Answer token F1                                                                              | 0.027     | 0.024     | 0.020     | 0.048        |
-| Citation precision (cited passages holding gold evidence)                                    | 0.308     | 0.345     | 0.200     | 0.506        |
-| Citation recall (gold articles cited)                                                        | 0.694     | 0.527     | 0.727     | 0.917        |
-| Citation validity / uncited sentences / lexical faithfulness                                 | 1 / 0 / 1 | 1 / 0 / 1 | 1 / 0 / 1 | 1 / 0 / 1    |
-| Says "not covered" on the 20 unanswerable questions                                          | 0.200     |           |           | 0.200        |
-| Says "not covered" on an answerable question                                                 | 0.006     | 0         | 0.013     | 0            |
+| Answer eval: 180 frozen questions through dense retrieval (the default) + `GroundedChat`, `mock-extractive` | all       | HotpotQA  | KILT NQ   | hand-written |
+| ----------------------------------------------------------------------------------------------------------- | --------- | --------- | --------- | ------------ |
+| A gold passage is among the 6 sent                                                                          | 0.825     | 0.873     | 0.733     | 0.967        |
+| Answer contains a gold answer                                                                               | 0.444     | 0.400     | 0.333     | 0.800        |
+| Answer token F1                                                                                             | 0.035     | 0.026     | 0.027     | 0.070        |
+| Citation precision (cited passages holding gold evidence)                                                   | 0.438     | 0.367     | 0.379     | 0.706        |
+| Citation recall (gold articles cited)                                                                       | 0.747     | 0.564     | 0.800     | 0.950        |
+| Citation validity / uncited sentences / lexical faithfulness                                                | 1 / 0 / 1 | 1 / 0 / 1 | 1 / 0 / 1 | 1 / 0 / 1    |
+| Says "not covered" on the 20 unanswerable questions                                                         | 0.300     |           |           | 0.300        |
+| Says "not covered" on an answerable question                                                                | 0.031     | 0         | 0.067     | 0            |
 
 The extractive mock quotes retrieved sentences verbatim and cites each one, so citation validity, uncited sentences, and lexical faithfulness sit at their ceilings by construction. They are there to catch a real model. Token F1 is low because the mock answers with whole sentences, not short spans. `EVAL_JUDGE=anthropic` adds a claim-by-claim LLM judge for faithfulness. [`AnswerMetrics.ts`](src/evals/AnswerMetrics.ts), [`FaithfulnessJudge.ts`](src/evals/FaithfulnessJudge.ts)
+
+Through BM25 the same run sent a gold passage for 0.681 of the answerable questions and contained a gold answer for 0.356. Dense retrieval raises both, and it also says "not covered" on more answerable questions (0.031, up from 0.006).
 
 <a id="steady-load"></a>
 
