@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { runAtRequestTime } from "@/app/run";
 import { AssistAnswer } from "@/components/AssistAnswer";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SearchResultList } from "@/components/SearchResultList";
 import { Button } from "@/components/ui/button";
 import { SearchQuery } from "@/server/search/SearchProtocol";
@@ -99,6 +100,7 @@ async function Results({
 export default function SearchPage({ searchParams }: PageProps<"/search">) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
+      <SiteHeader />
       <Suspense
         fallback={<p className="text-sm text-muted-foreground">Searching…</p>}
       >

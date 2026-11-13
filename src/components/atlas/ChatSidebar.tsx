@@ -1,11 +1,15 @@
 "use client";
 
 import {
+  CodeIcon,
   GamepadIcon,
+  KeyRoundIcon,
   MessageSquareIcon,
   PlusIcon,
+  SearchIcon,
   TrashIcon,
 } from "lucide-react";
+import Link from "next/link";
 import {
   Sidebar,
   SidebarContent,
@@ -98,6 +102,34 @@ export function ChatSidebar({
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="sm" render={<Link href="/search" />}>
+              <SearchIcon />
+              Search the articles
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="sm" render={<Link href="/pro" />}>
+              <KeyRoundIcon />
+              How Pro works
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              size="sm"
+              render={
+                <a
+                  href="https://github.com/ZaynMuhammad/rag-ai-chat"
+                  rel="noreferrer"
+                />
+              }
+            >
+              <CodeIcon />
+              Source on GitHub
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
         <p className="px-2 text-[11px] leading-snug text-muted-foreground">
           Article text from Wikipedia, CC BY-SA 4.0. Places from Wikidata. No
           accounts, no cookies, no request logs. Chats are saved only in this
