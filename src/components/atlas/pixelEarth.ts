@@ -47,13 +47,12 @@ export function paintPixelEarth(
 
   const image = context.getImageData(0, 0, size, size);
   const pixels = image.data;
-  const landMask = pixels.filter((_, channel) => channel % 4 === 3);
+  const landMask = new Uint8Array(size * size);
+  for (let pixel = 0; pixel < landMask.length; pixel++) {
+    landMask[pixel] = (pixels[pixel * 4 + 3] ?? 0) >= 128 ? 1 : 0;
+  }
   const isLand = (x: number, y: number) =>
-    x >= 0 &&
-    y >= 0 &&
-    x < size &&
-    y < size &&
-    (landMask[y * size + x] ?? 0) >= 128;
+    x >= 0 && y >= 0 && x < size && y < size && landMask[y * size + x] === 1;
   const ditherWidth = 1 / radius;
 
   for (let y = 0; y < size; y++) {
@@ -65,17 +64,19 @@ export function paintPixelEarth(
         pixels[index + 3] = 0;
         continue;
       }
-      const light = Math.hypot(
-        0.5 + dx / (2 * radius) - lightOrigin,
-        0.5 + dy / (2 * radius) - lightOrigin,
-      );
+      const lx = 0.5 + dx / (2 * radius) - lightOrigin;
+      const ly = 0.5 + dy / (2 * radius) - lightOrigin;
+      const light = Math.sqrt(lx * lx + ly * ly);
       const shade = lightBand(light, ditherWidth, (x + y) % 2 === 0);
       const color = !isLand(x, y)
         ? ocean[shade]
         : shade === 0 && !isLand(x - 1, y - 1)
           ? sunlitCoast
           : land[shade];
-      pixels.set([...color, 255], index);
+      pixels[index] = color[0];
+      pixels[index + 1] = color[1];
+      pixels[index + 2] = color[2];
+      pixels[index + 3] = 255;
     }
   }
   context.putImageData(image, 0, 0);
