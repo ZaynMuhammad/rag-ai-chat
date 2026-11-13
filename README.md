@@ -177,7 +177,7 @@ browser ──► Cloudflare Worker on workers.dev ──► Cloudflare Tunnel �
 ```
 
 - **No open ports.** The VPS accepts no public connections. `cloudflared` dials out, and a Workers VPC binding lets the Worker reach the app's loopback port through that tunnel.
-- **The app never receives who is asking.** [`deploy/worker/index.js`](deploy/worker/index.js) forwards an allowlist of request headers and drops the rest. Pointed at a header-echo server, the same Worker delivered only `accept`, `accept-encoding`, `authorization`, `host`, and the two `x-forwarded-*` headers it sets itself: no IP address, user agent, or cookie. Worker logging is off.
+- **The app never receives who is asking.** [`deploy/worker/index.js`](deploy/worker/index.js) forwards an allowlist of request headers and drops the rest. Pointed at a header-echo server, the same Worker delivered only `accept`, `accept-encoding`, `authorization`, `host`, and the two `x-forwarded-*` headers it sets itself: no IP address, user agent, or cookie. When a link-preview bot asks, the Worker sends the app one constant marker in place of the bot's user agent, so the preview gets its metadata in the page head. Worker logging is off.
 - **What Cloudflare sees.** Cloudflare terminates TLS, so it sees each visitor's IP address and URL like any CDN does, and it adds its own network error reporting headers. "No request logs" describes this app and its Worker, not Cloudflare's network.
 - **Small edge duties.** The Worker caches `/_next/static` in Cloudflare's cache and rejects request bodies over 64 KB before they reach the server.
 - **Free to run.** The Worker, the tunnel, and the model's free tier cost nothing. The provider budget keeps the model under its limits, and the mock answers when it is spent.

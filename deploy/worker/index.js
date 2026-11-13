@@ -14,6 +14,11 @@ const passedToOrigin = new Set([
 
 const maxBodyBytes = 64 * 1024;
 
+// eslint-disable-next-line no-restricted-syntax -- read only to tell the origin that a link-preview bot is asking; the value is never forwarded
+const agentHeader = "user-agent";
+const linkPreviewBots = /bot|facebookexternalhit|whatsapp|preview/i;
+const linkPreviewMarker = "Twitterbot";
+
 const isPassedToOrigin = (name) =>
   passedToOrigin.has(name) || name.startsWith("next-");
 
@@ -21,6 +26,9 @@ const originHeaders = (request, publicHost) => {
   const headers = new Headers();
   for (const [name, value] of request.headers) {
     if (isPassedToOrigin(name)) headers.append(name, value);
+  }
+  if (linkPreviewBots.test(request.headers.get(agentHeader) ?? "")) {
+    headers.set(agentHeader, linkPreviewMarker);
   }
   headers.set("x-forwarded-host", publicHost);
   headers.set("x-forwarded-proto", "https");
