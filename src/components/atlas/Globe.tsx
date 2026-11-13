@@ -15,7 +15,7 @@ import type { GeometryCollection, Topology } from "topojson-specification";
 import landTopology from "world-atlas/land-110m.json";
 import { Button } from "@/components/ui/button";
 import type { Pin } from "@/server/games/GameProtocol";
-import { nextPin, type PlacedPin } from "./pinNavigation";
+import { nextPin, pinAt, type PlacedPin } from "./pinNavigation";
 import { paintPixelEarth, unitsPerCanvasPixel } from "./pixelEarth";
 
 type Rotation = readonly [number, number];
@@ -35,6 +35,8 @@ const radius = 380;
 const minZoom = 1;
 const maxZoom = 16;
 const dragThreshold = 4;
+const touchReach = 22;
+const pointerReach = 6;
 const startRotation: Rotation = [30, -30];
 const pixelViewsAcross = 3;
 const pixelCanvasSize = (size * pixelViewsAcross) / unitsPerCanvasPixel;
@@ -106,6 +108,8 @@ export function Globe({
       ? []
       : [{ pin, x: hundredths(point[0]), y: hundredths(point[1]) }];
   });
+  const drawnRadius = (pin: Pin) =>
+    pinRadius(pin) * (pin === selected ? 1.4 : 1);
   const label = placed.find(
     ({ pin }) => pin === (hovered ?? focused ?? selected),
   );
@@ -134,6 +138,19 @@ export function Globe({
     return size / Math.min(box.width, box.height);
   };
 
+  const pinUnder = (event: PointerEvent<SVGSVGElement>) => {
+    const svg = event.currentTarget;
+    const toSvg = svg.getScreenCTM()?.inverse();
+    if (toSvg === undefined) return undefined;
+    const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(
+      toSvg,
+    );
+    const reach =
+      (event.pointerType === "touch" ? touchReach : pointerReach) *
+      unitsPerPixel(svg);
+    return pinAt(placed, point.x, point.y, drawnRadius, reach);
+  };
+
   const onPointerDown = (event: PointerEvent<SVGSVGElement>) => {
     drag.current = {
       x: event.clientX,
@@ -145,7 +162,11 @@ export function Globe({
 
   const onPointerMove = (event: PointerEvent<SVGSVGElement>) => {
     const current = drag.current;
-    if (current === null) return;
+    if (current === null) {
+      if (event.pointerType === "mouse")
+        setHovered(pinUnder(event)?.pin ?? null);
+      return;
+    }
     const dx = event.clientX - current.x;
     const dy = event.clientY - current.y;
     if (!current.moved) {
@@ -163,6 +184,14 @@ export function Globe({
 
   const endDrag = () => {
     drag.current = null;
+  };
+
+  const onPointerUp = (event: PointerEvent<SVGSVGElement>) => {
+    const tapped =
+      drag.current !== null && !drag.current.moved && event.button === 0;
+    endDrag();
+    const target = tapped ? pinUnder(event) : undefined;
+    if (target !== undefined) onSelect(target.pin);
   };
 
   const onWheel = (event: WheelEvent<SVGSVGElement>) => {
@@ -191,11 +220,18 @@ export function Globe({
         viewBox={`0 0 ${size} ${size}`}
         role="group"
         aria-label="Globe of video game studios. Use the arrow keys to move between places and Enter to open one."
-        className="relative size-full cursor-grab touch-none select-none active:cursor-grabbing"
+        className={`relative size-full touch-none select-none ${
+          hovered === null
+            ? "cursor-grab active:cursor-grabbing"
+            : "cursor-pointer"
+        }`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
+        onPointerUp={onPointerUp}
         onPointerCancel={endDrag}
+        onPointerLeave={() => {
+          setHovered(null);
+        }}
         onWheel={onWheel}
       >
         {!pixelated && (
@@ -233,20 +269,16 @@ export function Globe({
               tabIndex={entry === tabStop ? 0 : -1}
               cx={x}
               cy={y}
-              r={pinRadius(pin) * (pin === selected ? 1.4 : 1)}
+              r={drawnRadius(pin)}
               fill="var(--primary)"
-              fillOpacity={pin.kind === "studio" ? 0.8 : 0.25}
+              fillOpacity={
+                pin === hovered ? 1 : pin.kind === "studio" ? 0.8 : 0.25
+              }
               stroke={
                 pin.kind === "studio" ? "var(--background)" : "var(--primary)"
               }
               strokeWidth={pin === selected ? 2 : 0.75}
-              className="cursor-pointer transition-[r] outline-none hover:[fill-opacity:1] focus-visible:[fill-opacity:1] focus-visible:[stroke-width:3] focus-visible:[stroke:var(--foreground)]"
-              onPointerEnter={() => {
-                setHovered(pin);
-              }}
-              onPointerLeave={() => {
-                setHovered(null);
-              }}
+              className="pointer-events-none transition-[r] outline-none focus-visible:[fill-opacity:1] focus-visible:[stroke-width:3] focus-visible:[stroke:var(--foreground)]"
               onFocus={() => {
                 setFocused(pin);
               }}

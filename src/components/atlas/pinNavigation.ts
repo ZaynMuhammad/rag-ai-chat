@@ -38,3 +38,28 @@ export const nextPin = (
   }
   return best;
 };
+
+const missRank = (distance: number, radius: number) =>
+  distance <= radius ? distance / radius : 1 + distance;
+
+export const pinAt = (
+  placed: ReadonlyArray<PlacedPin>,
+  x: number,
+  y: number,
+  drawnRadius: (pin: Pin) => number,
+  reach: number,
+): PlacedPin | undefined => {
+  let best: PlacedPin | undefined;
+  let bestRank = Infinity;
+  for (const candidate of placed) {
+    const distance = Math.hypot(candidate.x - x, candidate.y - y);
+    const radius = drawnRadius(candidate.pin);
+    if (distance > Math.max(radius, reach)) continue;
+    const rank = missRank(distance, radius);
+    if (rank < bestRank) {
+      best = candidate;
+      bestRank = rank;
+    }
+  }
+  return best;
+};

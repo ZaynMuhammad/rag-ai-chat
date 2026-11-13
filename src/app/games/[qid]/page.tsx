@@ -1,10 +1,12 @@
 import { Effect, Option } from "effect";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ArticleMeta, ArticleText } from "@/components/atlas/Article";
 import { GameChat } from "@/components/atlas/GameChat";
+import { SiteHeader } from "@/components/SiteHeader";
+import { linkPreview, siteDescription } from "@/lib/siteMetadata";
+import { RevealHashPassage } from "@/components/atlas/RevealHashPassage";
 import { GameCatalog } from "@/server/games/GameCatalog";
 import { runAtRequestTime } from "@/app/run";
 
@@ -20,9 +22,11 @@ export async function generateMetadata({
 }: PageProps<"/games/[qid]">): Promise<Metadata> {
   const game = await findGame((await params).qid);
   if (Option.isNone(game)) notFound();
+  const { title, description } = game.value;
   return {
-    title: `${game.value.title} · Game Atlas`,
-    description: game.value.description ?? undefined,
+    title: `${title} · Game Atlas`,
+    description: description ?? undefined,
+    ...linkPreview(title, description ?? siteDescription),
   };
 }
 
@@ -39,6 +43,7 @@ async function Game({ params }: { params: Promise<{ qid: string }> }) {
         <div className="mt-6">
           <ArticleText game={game.value} />
         </div>
+        <RevealHashPassage />
       </article>
       <aside className="lg:sticky lg:top-4 lg:h-[calc(100dvh-6rem)]">
         <div className="flex h-[32rem] flex-col rounded-xl border bg-card lg:h-full">
@@ -55,21 +60,14 @@ async function Game({ params }: { params: Promise<{ qid: string }> }) {
 export default function GamePage({ params }: PageProps<"/games/[qid]">) {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
-      <Link
-        href="/"
-        className="text-sm text-muted-foreground hover:text-primary"
+      <SiteHeader />
+      <Suspense
+        fallback={
+          <p className="text-sm text-muted-foreground">Loading article…</p>
+        }
       >
-        ← Back to the globe
-      </Link>
-      <div className="mt-4">
-        <Suspense
-          fallback={
-            <p className="text-sm text-muted-foreground">Loading article…</p>
-          }
-        >
-          <Game params={params} />
-        </Suspense>
-      </div>
+        <Game params={params} />
+      </Suspense>
     </main>
   );
 }

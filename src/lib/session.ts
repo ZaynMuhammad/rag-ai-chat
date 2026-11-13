@@ -22,12 +22,13 @@ const requestSession = (credential: Credential | undefined) =>
   });
 
 const accept = async (response: Response) => {
+  if (response.status === 429) return response;
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   current = decodeSession(await response.json());
   return current.token;
 };
 
-const mint = async (): Promise<string> => {
+const mint = async (): Promise<string | Response> => {
   const credential = nextCredential();
   if (credential === undefined) return accept(await requestSession(undefined));
   const response = await requestSession(credential);
@@ -41,7 +42,8 @@ const sessionToken = async () =>
     : mint();
 
 export const fetchWithSession = async (url: string, init: RequestInit) => {
-  const send = (token: string) => {
+  const send = async (token: string | Response) => {
+    if (token instanceof Response) return token;
     const headers = new Headers(init.headers);
     headers.set("authorization", `Bearer ${token}`);
     return fetch(url, { ...init, headers });
