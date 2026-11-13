@@ -9,7 +9,7 @@ import {
   Schema,
   Stream,
 } from "effect";
-import { LanguageModel, Model, type Response } from "effect/ai";
+import { LanguageModel, Model, Response } from "effect/ai";
 import { CircuitBreaker } from "@/server/provider/CircuitBreaker";
 import { notCovered } from "@/server/provider/ExtractiveAnswer";
 import { type Budget, ProviderBudget } from "@/server/provider/ProviderBudget";
@@ -73,6 +73,34 @@ const firstTokenWithin =
 const isTextDelta = (part: Response.AnyPart): part is Response.TextDeltaPart =>
   part.type === "text-delta";
 
+export class UnfinishedAnswer extends Schema.TaggedError<UnfinishedAnswer>()(
+  "UnfinishedAnswer",
+  { reason: Schema.Literals([...Response.FinishReason.literals, "none"]) },
+) {}
+
+const textUntilNaturalStop = <E, R>(
+  parts: Stream.Stream<Response.AnyPart, E, R>,
+) =>
+  Stream.unwrap(
+    Effect.map(Ref.make<UnfinishedAnswer["reason"]>("none"), (ending) => {
+      const naturalStop = Stream.unwrap(
+        Effect.map(Ref.get(ending), (reason) =>
+          reason === "stop"
+            ? Stream.empty
+            : Stream.fail(new UnfinishedAnswer({ reason })),
+        ),
+      );
+      return parts.pipe(
+        Stream.tap((part) =>
+          part.type === "finish" ? Ref.set(ending, part.reason) : Effect.void,
+        ),
+        Stream.filter(isTextDelta),
+        Stream.map((part) => part.delta),
+        Stream.concat(naturalStop),
+      );
+    }),
+  );
+
 const event = (value: ChatEvent) => Stream.succeed(value);
 
 export class GroundedChat extends Context.Service<
@@ -120,8 +148,13 @@ export class GroundedChat extends Context.Service<
               const { stepIndex } = yield* ExecutionPlan.CurrentMetadata;
               const refund = yield* budget.reserve(promptTokens);
               const tokens = LanguageModel.streamText({ prompt }).pipe(
-                Stream.filter(isTextDelta),
-                Stream.map((part) => ({ model, text: part.delta })),
+                textUntilNaturalStop,
+                Stream.map((text) => ({ model, text })),
+                Stream.tapErrorTag("UnfinishedAnswer", ({ reason }) =>
+                  Effect.logWarning("answer ended without a natural stop").pipe(
+                    Effect.annotateLogs({ model, reason }),
+                  ),
+                ),
               );
               return stepIndex === lastResort
                 ? tokens

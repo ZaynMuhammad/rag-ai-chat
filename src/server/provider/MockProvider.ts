@@ -23,15 +23,19 @@ export interface MockProviderOptions {
   readonly reply?: string | ((prompt: Prompt.Prompt) => string);
   readonly tokenDelay?: Duration.Input;
   readonly before?: Effect.Effect<void, AiError.AiError>;
+  readonly finishReason?: Response.FinishReason | "none";
 }
 
 const defaultReply = "This is a reply from the mock provider.";
 const defaultTokenDelay = Duration.millis(20);
 const textId = "mock-text";
 
-const finishPart = (outputTokens: number): Response.FinishPartEncoded => ({
+export const finishPart = (
+  reason: Response.FinishReason,
+  outputTokens: number,
+): Response.FinishPartEncoded => ({
   type: "finish",
-  reason: "stop",
+  reason,
   usage: {
     inputTokens: {
       uncached: undefined,
@@ -53,6 +57,7 @@ const tokenize = (text: string) => text.split(/(?<=\s)/);
 const streamParts = (
   reply: string,
   tokenDelay: Duration.Input,
+  finishReason: Response.FinishReason | "none",
 ): Stream.Stream<Response.StreamPartEncoded> => {
   const tokens = tokenize(reply);
   const parts: ReadonlyArray<Response.StreamPartEncoded> = [
@@ -63,7 +68,9 @@ const streamParts = (
       delta,
     })),
     { type: "text-end", id: textId },
-    finishPart(tokens.length),
+    ...(finishReason === "none"
+      ? []
+      : [finishPart(finishReason, tokens.length)]),
   ];
   const delayBefore = (part: Response.StreamPartEncoded) =>
     part.type === "text-delta" ? tokenDelay : Duration.zero;
@@ -78,6 +85,7 @@ const replyingModel = ({
   reply = defaultReply,
   tokenDelay = defaultTokenDelay,
   before = Effect.void,
+  finishReason = "stop",
 }: MockProviderOptions) => {
   const replyTo = (prompt: Prompt.Prompt) =>
     typeof reply === "string" ? reply : reply(prompt);
@@ -87,12 +95,14 @@ const replyingModel = ({
         const text = replyTo(prompt);
         return [
           { type: "text" as const, text },
-          finishPart(tokenize(text).length),
+          finishPart("stop", tokenize(text).length),
         ];
       }),
     streamText: ({ prompt }) =>
       Stream.unwrap(
-        Effect.map(before, () => streamParts(replyTo(prompt), tokenDelay)),
+        Effect.map(before, () =>
+          streamParts(replyTo(prompt), tokenDelay, finishReason),
+        ),
       ),
   });
 };
