@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { ArticleMeta, ArticleText } from "@/components/atlas/Article";
 import { GameChat } from "@/components/atlas/GameChat";
 import { RevealHashPassage } from "@/components/atlas/RevealHashPassage";
+import { linkPreview, siteDescription } from "@/lib/siteMetadata";
 import { GameCatalog } from "@/server/games/GameCatalog";
 import { runAtRequestTime } from "@/app/run";
 
@@ -21,9 +22,11 @@ export async function generateMetadata({
 }: PageProps<"/games/[qid]">): Promise<Metadata> {
   const game = await findGame((await params).qid);
   if (Option.isNone(game)) notFound();
+  const { title, description } = game.value;
   return {
-    title: `${game.value.title} · Game Atlas`,
-    description: game.value.description ?? undefined,
+    title: `${title} · Game Atlas`,
+    description: description ?? undefined,
+    ...linkPreview(title, description ?? siteDescription),
   };
 }
 

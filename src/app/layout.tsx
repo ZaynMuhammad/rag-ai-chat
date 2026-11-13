@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  linkPreview,
+  siteDescription,
+  siteName,
+  siteUrl,
+} from "@/lib/siteMetadata";
 import { applyStoredThemeScript } from "@/lib/theme";
 import "./globals.css";
 
@@ -15,9 +21,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Game Atlas",
-  description:
-    "Explore Wikipedia's video game articles on a globe of the studios that made them, and ask grounded questions with citations. No accounts, no tracking.",
+  metadataBase: siteUrl,
+  title: siteName,
+  description: siteDescription,
+  ...linkPreview(siteName, siteDescription),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
