@@ -17,10 +17,7 @@ import {
   decisiveMargin,
   strongScore,
 } from "../../src/server/search/AssistGate";
-import {
-  defaultRetrieverOptions,
-  Retriever,
-} from "../../src/server/search/Retriever";
+import { Retriever } from "../../src/server/search/Retriever";
 import { SearchResults } from "../../src/server/search/SearchResults";
 import { CorpusDatabase } from "../corpus/CorpusDatabase";
 import { evalDirectory, loadEvalSets } from "./EvalSet";
@@ -91,7 +88,7 @@ const program = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const store = yield* CorpusStore;
   const search = yield* SearchResults;
-  const retriever = yield* Retriever.make(defaultRetrieverOptions);
+  const retriever = yield* Retriever;
   const questions = (yield* loadEvalSets).flatMap((set) => set.questions);
   const passagesByGame = Map.groupBy(
     yield* store.passagesOf([
@@ -196,7 +193,7 @@ const program = Effect.gen(function* () {
 BunRuntime.runMain(
   program.pipe(
     Effect.provide(
-      SearchResults.layer.pipe(
+      Layer.mergeAll(SearchResults.layer, Retriever.layer).pipe(
         Layer.provideMerge(CorpusDatabase),
         Layer.provideMerge(BunServices.layer),
       ),
