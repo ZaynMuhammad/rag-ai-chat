@@ -21,6 +21,7 @@ import {
 } from "@/server/provider/CircuitBreaker";
 import { MockProvider } from "@/server/provider/MockProvider";
 import { notCovered } from "@/server/provider/ExtractiveAnswer";
+import { ProviderBudget } from "@/server/provider/ProviderBudget";
 import { Retriever } from "@/server/search/Retriever";
 import type { ChatEvent, ChatRequest } from "./ChatProtocol";
 import {
@@ -342,6 +343,72 @@ describe("GroundedChat.stream", () => {
           const afterProbe = yield* ask("Who created Tetris?");
           assert.strictEqual(answerText(afterProbe), "The primary is back.");
         }).pipe(Effect.provide(chatWith(primary.provider, extractive)));
+      }),
+  );
+
+  it.effect(
+    "skips a provider that is out of budget without calling it, then returns once the budget refills",
+    () =>
+      Effect.gen(function* () {
+        const primary = yield* countedPrimary;
+        yield* Ref.set(primary.healthy, true);
+        const budget = yield* ProviderBudget.make(
+          [{ unit: "requests", limit: 1, window: "1 minute" }],
+          0,
+        );
+        yield* Effect.gen(function* () {
+          const first = yield* ask("Who created Tetris?");
+          assert.deepStrictEqual(first.at(-1), {
+            _tag: "Done",
+            model: "primary",
+          });
+
+          const overBudget = yield* ask("Who created Tetris?");
+          assert.strictEqual(yield* Ref.get(primary.calls), 1);
+          assert.notInclude(tags(overBudget), "Failed");
+          assert.deepStrictEqual(overBudget.at(-1), {
+            _tag: "Done",
+            model: "mock-extractive",
+          });
+
+          yield* TestClock.adjust("1 minute");
+          const refilled = yield* ask("Who created Tetris?");
+          assert.deepStrictEqual(refilled.at(-1), {
+            _tag: "Done",
+            model: "primary",
+          });
+        }).pipe(
+          Effect.provide(chatWith({ ...primary.provider, budget }, extractive)),
+        );
+      }),
+  );
+
+  it.effect(
+    "spends no budget on a provider it skipped because its circuit was open",
+    () =>
+      Effect.gen(function* () {
+        const primary = yield* countedPrimary;
+        const failuresToOpen = defaultBreakerPolicy.consecutiveFailures;
+        const budget = yield* ProviderBudget.make(
+          [{ unit: "requests", limit: failuresToOpen + 1, window: "1 day" }],
+          0,
+        );
+        yield* Effect.gen(function* () {
+          for (let i = 0; i < failuresToOpen + 3; i++) {
+            yield* ask("Who created Tetris?");
+          }
+          assert.strictEqual(yield* Ref.get(primary.calls), failuresToOpen);
+
+          yield* Ref.set(primary.healthy, true);
+          yield* TestClock.adjust(defaultBreakerPolicy.cooldown);
+          const probe = yield* ask("Who created Tetris?");
+          assert.deepStrictEqual(probe.at(-1), {
+            _tag: "Done",
+            model: "primary",
+          });
+        }).pipe(
+          Effect.provide(chatWith({ ...primary.provider, budget }, extractive)),
+        );
       }),
   );
 
