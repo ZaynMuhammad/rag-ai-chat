@@ -49,3 +49,6 @@ next-env.d.ts
 
 # go load generator binary
 /loadgen/bin/
+
+# wrangler local state
+.wrangler/

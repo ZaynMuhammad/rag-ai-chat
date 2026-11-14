@@ -1,0 +1,15 @@
+{
+  "name": "game-atlas",
+  "main": "index.js",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": false },
+  "vpc_services": [
+    {
+      "binding": "ORIGIN",
+      "service_id": "01a1d31e-e029-7d72-b0a0-ba86b2c33a13",
+      "remote": true,
+    },
+  ],
+}
