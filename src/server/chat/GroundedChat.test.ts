@@ -19,7 +19,7 @@ import {
   CircuitBreaker,
   defaultBreakerPolicy,
 } from "@/server/provider/CircuitBreaker";
-import { MockProvider } from "@/server/provider/MockProvider";
+import { finishPart, MockProvider } from "@/server/provider/MockProvider";
 import { notCovered } from "@/server/provider/ExtractiveAnswer";
 import { ProviderBudget } from "@/server/provider/ProviderBudget";
 import { Retriever } from "@/server/search/Retriever";
@@ -92,6 +92,8 @@ const delta = (text: string) => ({
   delta: text,
 });
 
+const stop = finishPart("stop", 1);
+
 const partialThenOutage = testModel("partial-then-outage", () =>
   Stream.make(textStart, delta("Partial ")).pipe(
     Stream.concat(Stream.fail(outage)),
@@ -127,7 +129,7 @@ const countedPrimary = Effect.gen(function* () {
       Effect.gen(function* () {
         yield* Ref.update(calls, (n) => n + 1);
         return (yield* Ref.get(healthy))
-          ? Stream.make(textStart, delta("The primary is back."))
+          ? Stream.make(textStart, delta("The primary is back."), stop)
           : Stream.fail(outage);
       }),
     ),
@@ -218,6 +220,82 @@ describe("GroundedChat.stream", () => {
   );
 
   it.effect(
+    "reports a failure when the provider stops at its token limit mid-answer",
+    () =>
+      Effect.gen(function* () {
+        const events = yield* ask("Which country was Tetris created in?");
+        assert.deepStrictEqual(tags(events).slice(-2), ["Failed", "Done"]);
+        assert.strictEqual(
+          answerText(events),
+          "It was created at the Soviet Academy of Sciences [1]. The S",
+        );
+        assert.deepStrictEqual(
+          events.find((event) => event._tag === "Failed"),
+          { _tag: "Failed", message: providerFailed },
+        );
+      }).pipe(
+        Effect.provide(
+          chatWith(
+            {
+              id: "cut-off",
+              provider: "mock",
+              model: MockProvider.model({
+                reply:
+                  "It was created at the Soviet Academy of Sciences [1]. The S",
+                tokenDelay: Duration.zero,
+                finishReason: "length",
+              }),
+            },
+            extractive,
+          ),
+        ),
+      ),
+  );
+
+  it.effect(
+    "reports a failure when the stream ends without the provider saying it stopped",
+    () =>
+      Effect.gen(function* () {
+        const events = yield* ask("Who created Tetris?");
+        assert.deepStrictEqual(tags(events), [
+          "Citations",
+          "Delta",
+          "Failed",
+          "Done",
+        ]);
+      }).pipe(
+        Effect.provide(
+          chatWith(
+            testModel("dropped", () => Stream.make(textStart, delta("The S"))),
+            extractive,
+          ),
+        ),
+      ),
+  );
+
+  it.effect(
+    "fails over when the first provider ends without a natural stop before any token",
+    () =>
+      Effect.gen(function* () {
+        const events = yield* ask("Who created Tetris?");
+        assert.notInclude(tags(events), "Failed");
+        assert.deepStrictEqual(events.at(-1), {
+          _tag: "Done",
+          model: "mock-extractive",
+        });
+      }).pipe(
+        Effect.provide(
+          chatWith(
+            testModel("empty", () =>
+              Stream.make(textStart, finishPart("length", 0)),
+            ),
+            extractive,
+          ),
+        ),
+      ),
+  );
+
+  it.effect(
     "says the articles don't cover it, without calling a provider, when nothing in scope matches",
     () =>
       Effect.gen(function* () {
@@ -287,6 +365,7 @@ describe("GroundedChat.stream", () => {
                   Effect.as(Effect.sleep("5 seconds"), delta("but sure.")),
                 ),
               ),
+              Stream.concat(Stream.make(stop)),
             ),
           ),
           extractive,
@@ -307,7 +386,7 @@ describe("GroundedChat.stream", () => {
           testModel("last-resort", () =>
             Stream.fromEffect(
               Effect.as(Effect.sleep("5 seconds"), delta("Late.")),
-            ),
+            ).pipe(Stream.concat(Stream.make(stop))),
           ),
         ),
       ),
@@ -430,7 +509,7 @@ describe("GroundedChat.stream", () => {
         Effect.provide(
           chatWith(
             testModel("default", () =>
-              Stream.make(textStart, delta("From the default.")),
+              Stream.make(textStart, delta("From the default."), stop),
             ),
             failing,
             extractive,

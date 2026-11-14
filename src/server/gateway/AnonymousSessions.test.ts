@@ -15,6 +15,7 @@ const policy: SessionPolicy = {
   issuance: { limit: 3, window: "1 minute" },
   chatPerSession: { limit: 2, window: "1 minute" },
   chatOverall: { limit: 3, window: "1 minute" },
+  search: { limit: 2, window: "1 minute" },
 };
 
 const sessions = Layer.effect(
@@ -93,6 +94,25 @@ describe("AnonymousSessions", () => {
         for (const { token } of tokens) yield* admit(token);
         const fourth = yield* Effect.flip(admit(tokens[0].token));
         assert.instanceOf(fourth, RateLimited);
+      }).pipe(Effect.provide(sessions)),
+  );
+
+  it.effect(
+    "caps searches across everyone without a session, then refills after the window",
+    () =>
+      Effect.gen(function* () {
+        const admitSearch = Effect.flatMap(
+          AnonymousSessions,
+          (s) => s.admitSearch,
+        );
+        yield* admitSearch;
+        yield* admitSearch;
+        const limited = yield* Effect.flip(admitSearch);
+        assert.instanceOf(limited, RateLimited);
+        assert.isAtLeast(limited.retryAfterSeconds, 1);
+        yield* TestClock.adjust("1 minute");
+        yield* admitSearch;
+        yield* admitSearch;
       }).pipe(Effect.provide(sessions)),
   );
 

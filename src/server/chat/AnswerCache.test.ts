@@ -158,6 +158,21 @@ const realChat = GroundedChat.layer(
   Duration.seconds(2),
 ).pipe(Layer.provide(CircuitBreaker.layer));
 
+const cutOffChat = GroundedChat.layer(
+  [
+    {
+      id: "mock-extractive",
+      provider: "mock",
+      model: MockProvider.model({
+        reply: "It was created at the Soviet Academy of Sciences [1]. The S",
+        tokenDelay: "10 millis",
+        finishReason: "length",
+      }),
+    },
+  ],
+  Duration.seconds(2),
+).pipe(Layer.provide(CircuitBreaker.layer));
+
 const answerFrom = (feed: Feed, events: ReadonlyArray<ChatEvent>) =>
   Effect.andThen(Queue.offerAll(feed, events), Queue.end(feed));
 
@@ -465,6 +480,47 @@ describe("answerCacheLayer", () => {
           );
           assert.strictEqual(yield* pendingCalls(upstreamCalls), 0);
         }),
+      ),
+  );
+
+  it.effect(
+    "does not keep an answer the provider cut off, nor hand it to a late joiner as complete",
+    () =>
+      Effect.gen(function* () {
+        const leader = yield* askInBackground(question("Who made Tetris?"));
+        yield* TestClock.adjust("10 millis");
+        const firstDelta = yield* Queue.takeN(leader.seen, 2);
+        assert.strictEqual(firstDelta[1]?._tag, "Delta");
+
+        const joiner = yield* askInBackground(question("who made tetris"));
+        yield* TestClock.adjust("1 second");
+        yield* Fiber.join(leader.fiber);
+        yield* Fiber.join(joiner.fiber);
+        const joined = [...(yield* Queue.takeAll(joiner.seen))].map(
+          (event) => event._tag,
+        );
+        assert.deepStrictEqual(joined.slice(-2), ["Failed", "Done"]);
+
+        const later = yield* askInBackground(question("Who made Tetris?"));
+        yield* TestClock.adjust("1 second");
+        yield* Fiber.join(later.fiber);
+        assert.include(
+          [...(yield* Queue.takeAll(later.seen))].map((event) => event._tag),
+          "Failed",
+        );
+        assert.deepStrictEqual(yield* cacheResults, {
+          miss: 2,
+          coalesced: 1,
+        });
+      }).pipe(
+        Effect.provide(
+          answerCacheLayer(options).pipe(
+            Layer.provide(cutOffChat),
+            Layer.provide(Retriever.layerBm25),
+            Layer.provide(fixture),
+          ),
+        ),
+        Effect.provideService(Metric.MetricRegistry, new Map()),
       ),
   );
 
