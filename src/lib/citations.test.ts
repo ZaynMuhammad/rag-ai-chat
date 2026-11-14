@@ -18,3 +18,37 @@ describe("answerSegments", () => {
     assert.deepStrictEqual([...citedNumbers("A [2] B [2] C [9]", 3)], [2]);
   });
 });
+
+describe("answerSegments with markdown emphasis", () => {
+  it("drops the markers around an emphasised title", () => {
+    assert.deepStrictEqual(
+      answerSegments("The first *Metal Gear* and **Snatcher**.", 0),
+      [{ kind: "text", text: "The first Metal Gear and Snatcher." }],
+    );
+  });
+
+  it("keeps a citation that follows emphasis", () => {
+    assert.deepStrictEqual(answerSegments("By **Hideo Kojima**[1].", 1), [
+      { kind: "text", text: "By Hideo Kojima" },
+      { kind: "citation", number: 1 },
+      { kind: "text", text: "." },
+    ]);
+    assert.deepStrictEqual(answerSegments("_Metal Gear 2_ [1]", 1), [
+      { kind: "text", text: "Metal Gear 2 " },
+      { kind: "citation", number: 1 },
+    ]);
+  });
+
+  it("leaves a lone asterisk alone", () => {
+    assert.deepStrictEqual(answerSegments("A 5 * 3 grid, rated 4*.", 0), [
+      { kind: "text", text: "A 5 * 3 grid, rated 4*." },
+    ]);
+  });
+
+  it("leaves underscores inside a word alone", () => {
+    assert.deepStrictEqual(
+      answerSegments("Saved as metal_gear_msx and _Snatcher_.", 0),
+      [{ kind: "text", text: "Saved as metal_gear_msx and Snatcher." }],
+    );
+  });
+});

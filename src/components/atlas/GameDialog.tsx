@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRightIcon } from "lucide-react";
 import { Suspense, use } from "react";
 import type { CiteHandler } from "@/components/ChatPanel";
 import {
@@ -14,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { ChatGame } from "@/lib/chats";
 import type { GameDetail } from "@/server/games/GameProtocol";
 import { ArticleMeta, ArticleText, revealPassage } from "./Article";
+import { gamePath } from "./atlasHistory";
 import { GameChat } from "./GameChat";
 
 export interface OpenGame {
@@ -89,6 +91,13 @@ export function GameDialog({
             <DialogTitle className="text-xl font-semibold">
               {open.game.title}
             </DialogTitle>
+            <a
+              href={gamePath(open.game.qid)}
+              className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+            >
+              Open as a page
+              <ArrowUpRightIcon className="size-3" />
+            </a>
             <DialogDescription className="sr-only">
               The Wikipedia article for {open.game.title}, with a chat that
               answers from it.

@@ -4,10 +4,24 @@ export type AnswerSegment =
 
 export const citationPattern = /\[(\d{1,2})\]/g;
 
+const emphasisMarkers = [
+  /(?<![\w*])\*\*(?=\S)([^*]+?)(?<=\S)\*\*(?![\w*])/g,
+  /(?<![\w*])\*(?=\S)([^*]+?)(?<=\S)\*(?![\w*])/g,
+  /(?<![\w_])__(?=\S)([^_]+?)(?<=\S)__(?![\w_])/g,
+  /(?<![\w_])_(?=\S)([^_]+?)(?<=\S)_(?![\w_])/g,
+];
+
+const stripEmphasis = (text: string) =>
+  emphasisMarkers.reduce(
+    (stripped, marker) => stripped.replaceAll(marker, "$1"),
+    text,
+  );
+
 export const answerSegments = (
-  answer: string,
+  rawAnswer: string,
   sourceCount: number,
 ): ReadonlyArray<AnswerSegment> => {
+  const answer = stripEmphasis(rawAnswer);
   const segments: Array<AnswerSegment> = [];
   let cursor = 0;
   for (const match of answer.matchAll(citationPattern)) {
